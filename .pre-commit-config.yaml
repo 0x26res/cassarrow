@@ -1,0 +1,23 @@
+repos:
+-   repo: https://github.com/ambv/black
+    rev: 21.12b0
+    hooks:
+    - id: black
+      language_version: python3.8
+#-   repo: https://github.com/pre-commit/pre-commit-hooks
+#    rev: v1.2.3
+#    hooks:
+#    - id: flake8
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: 'v0.812'  # Use the sha / tag you want to point at
+    hooks:
+    -   id: mypy
+        files: '^br'
+-   repo: https://github.com/roy-ht/pre-commit-jupyter
+    rev: v1.2.1
+    hooks:
+      - id: jupyter-notebook-cleanup
+        args:
+          - --remove-kernel-metadata
+          - --pin-patterns
+          - "[pin];[donotremove]"
