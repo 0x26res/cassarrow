@@ -32,6 +32,7 @@ pkgs.mkShell {
     pkgs.boost
     pkgs.libxcrypt
     pkgs.libkrb5
+    pkgs.clang-tools
     python-with-my-packages
   ];
 

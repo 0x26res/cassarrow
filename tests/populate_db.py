@@ -42,9 +42,9 @@ def populate_data(cluster, data):
         )
         insert_statement = session.prepare(query)
 
-        for chunck in chunks(data, 142):
+        for chunk in chunks(data, 142):
             batch = BatchStatement(consistency_level=ConsistencyLevel.QUORUM)
-            for record in chunck:
+            for record in chunk:
                 batch.add(insert_statement, record)
             session.execute(batch)
 
