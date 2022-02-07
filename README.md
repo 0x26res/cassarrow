@@ -3,11 +3,13 @@ Arrow based Cassandra python driver
 
 ## TODO
 
-* "cassandra/row_parser.pyx": def recv_results_rows should call pybind and make the magic happen
-* "recv_results_rows"
-* Figure out behaviour for null -> Buffer is empty (negative size)
-* Add type mapping
+* Check the value make sense
 * create a table with every possible type
+* test every possible types
+* add list
+* add UDT
+* add C++ tests
+* 
 
 Save files from cassandra in docker 
 
@@ -61,7 +63,7 @@ pip install -r requirements.txt
 ## Quick test
 
 ```shell
-cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target bindings -- -j 3 && PYTHONPATH=cmake-build-debug/cpp/ pytest tests
+cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target bindings -- -j 3 && PYTHONPATH=./:cmake-build-debug/cpp/ pytest tests
 ```
 
 

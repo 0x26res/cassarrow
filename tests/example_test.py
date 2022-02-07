@@ -1,20 +1,22 @@
-import io
-
-import pyarrow as pa
+import bindings
 import cassandra.cluster
 import pkg_resources
+import pyarrow as pa
 import pytest
-from cassandra.cqltypes import CassandraTypeType
-
+from cassandra.cqltypes import SimpleDateType
 from cassandra.protocol import (
     NumpyProtocolHandler,
     _ProtocolHandler,
     _message_types_by_opcode,
-    ResultMessage,
-    read_int,
-    read_value,
 )
 from cassandra.query import tuple_factory
+
+from cassarrow import (
+    ArrowProtocolHandler,
+    ArrowResultMessage,
+    metadata_to_schema,
+    record_batch_factory,
+)
 
 
 @pytest.fixture()
@@ -42,11 +44,6 @@ class DebugProtocolHandler(_ProtocolHandler):
         compressor: None,
         allow_beta_protocol_version: bool,
     ):
-        # print(type(msg))
-        # print(type(stream_id))
-        # print(type(protocol_version))
-        # print(type(compressor))
-        # print(type(allow_beta_protocol_version))
         return _ProtocolHandler.encode_message(
             msg, stream_id, protocol_version, compressor, allow_beta_protocol_version
         )
@@ -88,12 +85,41 @@ class DebugProtocolHandler(_ProtocolHandler):
 
 
 def test_query(session: cassandra.cluster.Session):
-    session.client_protocol_handler = DebugProtocolHandler
+    # session.client_protocol_handler = ArrowProtocolHandler
     results = session.execute(
         "SELECT * from cassarrow.time_series where event_date = '2019-10-01'"
     )
     rows = [r for r in results]
+    print(results.column_names)
+    print(results.column_types)
     print(len(rows))
+    print(rows[:5])
+
+
+def test_query_arrow(session: cassandra.cluster.Session):
+    session.client_protocol_handler = ArrowProtocolHandler
+    session.row_factory = record_batch_factory
+    results = session.execute(
+        "SELECT * from cassarrow.time_series where event_date = '2019-10-01'"
+    )
+    schema = metadata_to_schema(results.column_names, results.column_types)
+    rows = [r for r in results]
+    print(len(rows[0]))
+    table = pa.Table.from_batches(rows, schema=schema)
+    print(len(table))
+    print(table.to_pandas().head().to_markdown())
+    print(table.to_pandas().tail().to_markdown())
+
+
+def test_query_arrow_empty(session: cassandra.cluster.Session):
+    session.client_protocol_handler = ArrowProtocolHandler
+    session.row_factory = record_batch_factory
+    results = session.execute(
+        "SELECT * from cassarrow.time_series where event_date = '2010-10-01'"
+    )
+    schema = metadata_to_schema(results.column_names, results.column_types)
+    rows = [r for r in results]
+    table = pa.Table.from_batches(rows, schema=schema)
 
 
 def test_message_types_by_opcode():
@@ -112,98 +138,8 @@ def test_numpy_query(session: cassandra.cluster.Session):
     np_batches = [b for b in results]
     len(np_batches)
     print(len(np_batches))
-
-
-NATIVE_TYPES = {
-    "ascii": pa.string(),
-    "bigint": pa.int64(),
-    "blob": pa.binary(),
-    "boolean": pa.bool_(),
-    "counter": pa.int64(),
-    "date": pa.date32(),
-    "double": pa.float64(),
-    # "decimal": ???
-    "duration": pa.duration("ns"),
-    "float": pa.float32(),
-    "inet": pa.string(),
-    "int": pa.int32(),
-    "smallint": pa.int16(),
-    "text": pa.string(),
-    "time": pa.time64("ns"),
-    "timestamp": pa.timestamp("ns"),
-    # "timeuuid"
-    "tinyint": pa.int8(),
-    # "uuid"
-    "varchar": pa.string(),
-    # "varint":
-}
-
-
-def get_arrow_type(dtype: CassandraTypeType) -> pa.DataType:
-    typename = dtype.typename
-    try:
-        return NATIVE_TYPES[typename]
-    except KeyError:
-        raise TypeError(f"{typename}: {dtype}")
-
-
-def column_metadata_to_schema(column_metadata: list[tuple]) -> pa.Schema:
-    return pa.schema(
-        [
-            pa.field(column_name, get_arrow_type(dtype))
-            for keyspace, table, column_name, dtype in column_metadata
-        ]
-    )
-
-
-def receive_pyarrow(row_count: int, f: io.BytesIO):
-    for row in row_count:
-        row_bytes = read_value(f)
-
-
-class MyResultMessage(ResultMessage):
-    """
-    Cython version of Result Message that has a faster implementation of
-    recv_results_row.
-    """
-
-    # type_codes = ResultMessage.type_codes.copy()
-    code_to_type = dict((v, k) for k, v in ResultMessage.type_codes.items())
-
-    def recv_results_rows(self, f, protocol_version, user_type_map, result_metadata):
-        print(type(f))
-
-        self.recv_results_metadata(f, user_type_map)
-        column_metadata = self.column_metadata or result_metadata
-        schema = column_metadata_to_schema(column_metadata)
-        print(schema)
-
-        rowcount = read_int(f)
-        rows = [self.recv_row(f, len(column_metadata)) for _ in range(rowcount)]
-        self.column_names = [c[2] for c in column_metadata]
-        self.column_types = [c[3] for c in column_metadata]
-        try:
-            self.parsed_rows = [
-                tuple(
-                    ctype.from_binary(val, protocol_version)
-                    for ctype, val in zip(self.column_types, row)
-                )
-                for row in rows
-            ]
-        except Exception:
-            for row in rows:
-                for i in range(len(row)):
-                    try:
-                        self.column_types[i].from_binary(row[i], protocol_version)
-                    except Exception as e:
-                        raise RuntimeError(
-                            'Failed decoding result column "%s" of type %s: %s'
-                            % (
-                                self.column_names[i],
-                                self.column_types[i].cql_parameterized_type(),
-                                str(e),
-                            )
-                        )
+    print(results.column_names)
+    print(results.column_types)
 
 
 def test_from_data():
@@ -212,20 +148,18 @@ def test_from_data():
     with open(file_name, "rb") as fp:
         data = fp.read()
 
-    msg = _ProtocolHandler.decode_message(5, {}, 3, 0, 8, data, None, [])
-    # print(type(msg), msg)
+    msg_classic = _ProtocolHandler.decode_message(5, {}, 3, 0, 8, data, None, [])
 
-    _ProtocolHandler.message_types_by_opcode[8] = MyResultMessage
-    _ProtocolHandler.decode_message(5, {}, 3, 0, 8, data, None, [])
-    # print(type(msg), msg)
+    _ProtocolHandler.message_types_by_opcode[8] = ArrowResultMessage
+    msg_arrow = _ProtocolHandler.decode_message(5, {}, 3, 0, 8, data, None, [])
+
+    print(msg_arrow.parsed_rows)
 
 
 def test_bindings():
-    import bindings
-
     print(bindings.test_arrow())
     bindings.parse_results(
-        b"",
+        bytes([0x0, 0x0, 0x0, 0x0]),
         pa.schema(
             [
                 pa.field("int", pa.int32()),
@@ -233,3 +167,5 @@ def test_bindings():
             ]
         ),
     )
+
+    SimpleDateType.EPOCH_OFFSET_DAYS

@@ -16,6 +16,7 @@ let
     isort
     cassandra-driver
     pandas
+    tabulate
   ]);
   #boost = pkgs.boost.override { enableShared = false; enabledStatic = true; };
   
