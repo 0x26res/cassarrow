@@ -100,7 +100,7 @@ def test_query_arrow(session: cassandra.cluster.Session):
     session.client_protocol_handler = ArrowProtocolHandler
     session.row_factory = record_batch_factory
     results = session.execute(
-        "SELECT * from cassarrow.time_series where event_date = '2019-10-01'"
+        "SELECT * from cassarrow.time_series where event_date = '2019-10-02'"
     )
     schema = metadata_to_schema(results.column_names, results.column_types)
     rows = [r for r in results]
@@ -120,6 +120,7 @@ def test_query_arrow_empty(session: cassandra.cluster.Session):
     schema = metadata_to_schema(results.column_names, results.column_types)
     rows = [r for r in results]
     table = pa.Table.from_batches(rows, schema=schema)
+    assert len(table) == 0
 
 
 def test_message_types_by_opcode():
@@ -136,8 +137,6 @@ def test_numpy_query(session: cassandra.cluster.Session):
         "SELECT * from cassarrow.time_series where event_date = '2019-10-01'"
     )
     np_batches = [b for b in results]
-    len(np_batches)
-    print(len(np_batches))
     print(results.column_names)
     print(results.column_types)
 
@@ -157,7 +156,6 @@ def test_from_data():
 
 
 def test_bindings():
-    print(bindings.test_arrow())
     bindings.parse_results(
         bytes([0x0, 0x0, 0x0, 0x0]),
         pa.schema(
@@ -167,5 +165,3 @@ def test_bindings():
             ]
         ),
     )
-
-    SimpleDateType.EPOCH_OFFSET_DAYS

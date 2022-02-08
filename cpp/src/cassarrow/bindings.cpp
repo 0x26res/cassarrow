@@ -7,24 +7,42 @@
 #include <arrow/python/pyarrow.h>
 #include <arrow/table.h>
 #include <parquet/api/io.h>
-#include <arpa/inet.h>
 
 namespace cassarrow {
 
-int32_t read_int(std::istringstream& stream) {
-  char buffer[sizeof(int32_t)];
-  stream.read(buffer, sizeof(int32_t));
-  return ntohl(*((int32_t*)buffer));
+const uint32_t DATE_OFFSET = 1 << 31;
+
+template <class T>
+void reverse_value(T& value) {
+  char* data = (char*)&value;
+  for (size_t i = 0; i < sizeof(T) / 2; ++i) {
+    std::swap(data[i], data[sizeof(T) - i - 1]);
+  }
 }
 
-template<class T>
-void reverse_value(T& value)
-{
-  char* data = (char*)&value;
-  for(int i=0; i< sizeof(T) /2; i++)
-  {
-    std::swap(data[i], data[sizeof(T)-i-1]);
+template <class T>
+arrow::Status readPrimitive(const char* buffer, const size_t size, T& value) {
+  if (size != sizeof(T)) {
+    return arrow::Status(arrow::StatusCode::CapacityError, "Wrong buffer size");
+  } else {
+    value = *((T*)buffer);
+    if (arrow::Endianness::Native == arrow::Endianness::Little) {
+      reverse_value<T>(value);
+    }
+    return arrow::Status::OK();
   }
+}
+
+template <class T>
+arrow::Status readPrimitive(std::string const& buffer, T& value) {
+  return readPrimitive<T>(buffer.c_str(), buffer.size(), value);
+}
+
+template <class T>
+arrow::Status readPrimitive(std::istringstream& stream, T& value) {
+  char buffer[sizeof(T)];
+  stream.read(buffer, sizeof(T));
+  return readPrimitive<T>(buffer, sizeof(T), value);
 }
 
 class RecordHandler {
@@ -43,11 +61,10 @@ public:
   virtual arrow::Status append(std::string const& buffer) {
     if (buffer.empty()) {
       return _builder->AppendNull();
-    } else if (buffer.size() == sizeof(int32_t)) {
-      const int32_t value = ntohl(*((int32_t*)buffer.c_str()));
-      return _builder->Append(value);
     } else {
-      return arrow::Status(arrow::StatusCode::CapacityError, "Wrong buffer size");
+      int32_t value;
+      RETURN_NOT_OK(readPrimitive<int32_t>(buffer, value));
+      return _builder->Append(value);
     }
   }
 
@@ -64,13 +81,10 @@ public:
   virtual arrow::Status append(std::string const& buffer) {
     if (buffer.empty()) {
       return _builder->AppendNull();
-    } else if (buffer.size() == sizeof(int32_t)) {
-      const uint32_t value = uint32_t((unsigned char)(buffer[0]) << 24 | (unsigned char)(buffer[1]) << 16 |
-                                      (unsigned char)(buffer[2]) << 8 | (unsigned char)(buffer[3]));
-      const uint32_t offset = 1 << 31;
-      return _builder->Append(value - offset);
     } else {
-      return arrow::Status(arrow::StatusCode::CapacityError, "Wrong buffer size");
+      uint32_t value;
+      RETURN_NOT_OK(readPrimitive<uint32_t>(buffer, value));
+      return _builder->Append(value - DATE_OFFSET);
     }
   }
 
@@ -89,12 +103,10 @@ public:
   virtual arrow::Status append(std::string const& buffer) {
     if (buffer.empty()) {
       return _builder->AppendNull();
-    } else if (buffer.size() == sizeof(int64_t)) {
-      const int64_t value = *((int64_t*)buffer.c_str());
-      reverse_value(value);
-      return _builder->Append(value);
     } else {
-      return arrow::Status(arrow::StatusCode::CapacityError, "Wrong buffer size");
+      int64_t value = 0;
+      RETURN_NOT_OK(readPrimitive<int64_t>(buffer, value));
+      return _builder->Append(value * 1000000ll);
     }
   }
 
@@ -111,13 +123,10 @@ public:
   virtual arrow::Status append(std::string const& buffer) {
     if (buffer.empty()) {
       return _builder->AppendNull();
-    } else if (buffer.size() == sizeof(double)) {
-      double value;
-      memcpy(&value, buffer.c_str(), sizeof(double));
-      reverse_value(value);
-      return _builder->Append(value);
     } else {
-      return arrow::Status(arrow::StatusCode::CapacityError, "Wrong buffer size");
+      double value;
+      ARROW_RETURN_NOT_OK(readPrimitive<double>(buffer, value));
+      return _builder->Append(value);
     }
   }
 
@@ -158,13 +167,14 @@ arrow::Status parseResults(std::string const& bytes,
   }
   std::istringstream stream{bytes};
 
-  const int32_t rows = read_int(stream);
-  std::cout << "rows " << rows << std::endl;
+  int32_t rows = 0;
+  ARROW_RETURN_NOT_OK(readPrimitive<int32_t>(stream, rows));
 
   std::string buffer;
   for (int32_t row = 0; row < rows; ++row) {
     for (std::shared_ptr<RecordHandler> const& handler : handlers) {
-      const int32_t size = read_int(stream);
+      int32_t size = 0;
+      ARROW_RETURN_NOT_OK(readPrimitive<int32_t>(stream, size));
       if (size == 0) {
         buffer.clear();
       } else {
@@ -191,47 +201,21 @@ arrow::Status parseResults(std::string const& bytes,
 namespace {
 void sayHello() { std::cout << "HELLO" << std::endl; }
 
-std::shared_ptr<arrow::Table> getTable() {
-  arrow::StringBuilder builder;
-  PARQUET_THROW_NOT_OK(builder.Append("FOO"));
-  arrow::ArrayVector arrays = {builder.Finish().ValueOrDie()};
-  std::shared_ptr<arrow::Schema> schema = arrow::schema({arrow::field("foo", arrow::utf8())});
+pybind11::object pyParseResults(pybind11::bytes const& bytes, pybind11::object schema) {
+  arrow::Result<std::shared_ptr<arrow::Schema>> arrowSchema = arrow::py::unwrap_schema(schema.ptr());
 
-  std::shared_ptr<arrow::Table> table = arrow::Table::Make(schema, arrays);
-  return table;
+  if (!arrowSchema.ok()) {
+    throw std::runtime_error("Couldn't read schema");
+  }
+
+  std::shared_ptr<arrow::RecordBatch> recordBatch;
+  arrow::Status status = cassarrow::parseResults(bytes, arrowSchema.ValueOrDie(), recordBatch);
+  if (!status.ok()) {
+    throw std::runtime_error(status.ToString());
+  } else {
+    return pybind11::reinterpret_steal<pybind11::object>(arrow::py::wrap_batch(recordBatch));
+  }
 }
-
-void testArrow() {
-      arrow::py::import_pyarrow();
-
-      auto table = getTable();
-
-      std::cout << *table->schema() << std::endl;
-      std::cout << table->num_rows() << std::endl;
-    }
-
-    pybind11::object pyGetTable() {
-
-      auto table = getTable();
-      return pybind11::reinterpret_steal<pybind11::object>(arrow::py::wrap_table(table));
-    }
-
-    pybind11::object pyParseResults(pybind11::bytes const &bytes, pybind11::object schema) {
-      arrow::Result<std::shared_ptr<arrow::Schema>> arrowSchema = arrow::py::unwrap_schema(schema.ptr());
-
-      if (!arrowSchema.ok()) {
-        throw std::runtime_error("Couldn't read schema");
-      }
-
-      std::shared_ptr<arrow::RecordBatch> recordBatch;
-      arrow::Status status = cassarrow::parseResults(bytes, arrowSchema.ValueOrDie(), recordBatch);
-      if (!status.ok()) {
-        throw std::runtime_error(status.ToString());
-      } else {
-        return pybind11::reinterpret_steal<pybind11::object>(arrow::py::wrap_batch(recordBatch));
-      }
-    }
-
 
 } // namespace
 
@@ -239,7 +223,5 @@ PYBIND11_MODULE(bindings, m) {
   m.doc() = "pybind11 example plugin";
 
   m.def("say_hello", &sayHello, "Test stdout");
-  m.def("test_arrow", &testArrow, "Test arrow");
-  m.def("get_table", &pyGetTable, "Test arrow return table");
-  m.def("parse_results", &pyParseResults, "Test arrow parse results");
+  m.def("parse_results", &pyParseResults, "Parse Results from cassandra");
 }
