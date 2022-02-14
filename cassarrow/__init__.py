@@ -3,7 +3,7 @@ import io
 import pyarrow as pa
 import bindings
 from cassandra.cqltypes import CassandraTypeType
-from cassandra.protocol import ResultMessage, _ProtocolHandler, read_int
+from cassandra.protocol import ResultMessage, _ProtocolHandler
 
 NATIVE_TYPES = {
     "ascii": pa.string(),
@@ -21,7 +21,7 @@ NATIVE_TYPES = {
     "smallint": pa.int16(),
     "text": pa.string(),
     "time": pa.time64("ns"),
-    "timestamp": pa.timestamp("ns"),
+    "timestamp": pa.timestamp("ms"),
     # "timeuuid"
     "tinyint": pa.int8(),
     # "uuid"
@@ -65,7 +65,6 @@ class ArrowResultMessage(ResultMessage):
         self.column_names = [c[2] for c in column_metadata]
         self.column_types = [c[3] for c in column_metadata]
         schema = column_metadata_to_schema(column_metadata)
-        # print(read_int(f))
         self.parsed_rows = bindings.parse_results(f.read(), schema)
 
 

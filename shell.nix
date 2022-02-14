@@ -11,7 +11,7 @@ let
     pyarrow
     pybind11
     black
-    pre-commit
+    # pre-commit
     pytest
     isort
     cassandra-driver
