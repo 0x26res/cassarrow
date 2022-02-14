@@ -10,6 +10,18 @@
 
 namespace cassarrow {
 
+class RecordHandler {
+public:
+  virtual ~RecordHandler() = default;
+
+  virtual std::shared_ptr<arrow::ArrayBuilder> builder() = 0;
+  virtual arrow::Status append(std::string const& buffer) = 0;
+  virtual arrow::Status appendNull() = 0;
+  virtual arrow::Result<std::shared_ptr<arrow::Array>> build() = 0;
+};
+
+arrow::Status createHandler(std::shared_ptr<arrow::Field> const& field, std::shared_ptr<RecordHandler>& results);
+
 inline size_t num_leading_zeros(int64_t value) {
   if (value == 0)
     return 64;
@@ -38,6 +50,16 @@ inline size_t num_leading_zeros(int64_t value) {
 #else
   return __builtin_clzll(value);
 #endif
+}
+
+arrow::Status readSome(std::istringstream& stream, const int size, std::string& output) {
+
+  output.resize(size);
+  if (stream.readsome(&output[0], size) == size) {
+    return arrow::Status::OK();
+  } else {
+    return arrow::Status::CapacityError("Not enough data");
+  }
 }
 
 arrow::Status readByte(std::istringstream& buffer, uint8_t& value) {
@@ -93,8 +115,6 @@ inline int64_t decode_zig_zag(uint64_t n) {
 }
 
 inline arrow::Status get_duration(std::string const& buffer, int64_t& nanos) {
-  //         months, days, nanoseconds = vints_unpack(byts)
-  //        return util.Duration(months, days, nanoseconds)
   uint64_t decoded;
   std::istringstream stream{buffer};
 
@@ -148,22 +168,51 @@ arrow::Status readPrimitive(std::istringstream& stream, T& value) {
   return readPrimitive<T>(buffer, sizeof(T), value);
 }
 
-class RecordHandler {
+class ListHandler : public RecordHandler {
 public:
-  virtual ~RecordHandler() = default;
+  ListHandler(std::shared_ptr<arrow::ListType> const& listDataType, std::shared_ptr<RecordHandler> const& inner) :
+      _inner(inner),
+      _builder(std::make_shared<arrow::ListBuilder>(arrow::default_memory_pool(), inner->builder(), listDataType)) {}
 
-  virtual arrow::Status append(std::string const& buffer) = 0;
-  virtual arrow::Status appendNull() = 0;
+  std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
+  arrow::Status appendNull() override { return _builder->AppendNull(); }
+  arrow::Status append(std::string const& buffer) override {
+    std::istringstream stream(buffer);
+    int32_t elements;
+    ARROW_RETURN_NOT_OK(readPrimitive<int32_t>(stream, elements));
+    if (elements < 0) {
+      ARROW_RETURN_NOT_OK(_builder->AppendNull());
+    }
+    else {
+      ARROW_RETURN_NOT_OK(_builder->Append());
+      for (int32_t element = 0; element < elements; ++element) {
+        int32_t elementSize;
+        ARROW_RETURN_NOT_OK(readPrimitive<int32_t>(stream, elementSize));
+        if (elementSize < 0) {
+          ARROW_RETURN_NOT_OK(this->_inner->appendNull());
+        } else {
+          ARROW_RETURN_NOT_OK(readSome(stream, elementSize, _buffer));
+          ARROW_RETURN_NOT_OK(_inner->append(_buffer));
+        }
+      }
+    }
+    return arrow::Status::OK();
+  }
 
-  virtual arrow::Result<std::shared_ptr<arrow::Array>> build() = 0;
+  arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
+
+private:
+  std::shared_ptr<RecordHandler> _inner;
+  std::shared_ptr<arrow::ListBuilder> _builder;
+  std::string _buffer;
 };
 
 class Int8Handler : public RecordHandler {
 public:
   Int8Handler() : _builder(std::make_shared<arrow::Int8Builder>()) {}
-
-  virtual arrow::Status appendNull() { return _builder->AppendNull(); }
-  virtual arrow::Status append(std::string const& buffer) {
+  std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
+  arrow::Status appendNull() override { return _builder->AppendNull(); }
+  arrow::Status append(std::string const& buffer) override {
     if (buffer.empty()) {
       return _builder->AppendNull();
     } else {
@@ -172,8 +221,7 @@ public:
       return _builder->Append(value);
     }
   }
-
-  virtual arrow::Result<std::shared_ptr<arrow::Array>> build() { return _builder->Finish(); }
+  arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
 
 private:
   std::shared_ptr<arrow::Int8Builder> _builder;
@@ -183,8 +231,9 @@ class Int16Handler : public RecordHandler {
 public:
   Int16Handler() : _builder(std::make_shared<arrow::Int16Builder>()) {}
 
-  virtual arrow::Status appendNull() { return _builder->AppendNull(); }
-  virtual arrow::Status append(std::string const& buffer) {
+  std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
+  arrow::Status appendNull() override { return _builder->AppendNull(); }
+  arrow::Status append(std::string const& buffer) override {
     if (buffer.empty()) {
       return _builder->AppendNull();
     } else {
@@ -193,8 +242,7 @@ public:
       return _builder->Append(value);
     }
   }
-
-  virtual arrow::Result<std::shared_ptr<arrow::Array>> build() { return _builder->Finish(); }
+  arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
 
 private:
   std::shared_ptr<arrow::Int16Builder> _builder;
@@ -204,8 +252,9 @@ class Int32Handler : public RecordHandler {
 public:
   Int32Handler() : _builder(std::make_shared<arrow::Int32Builder>()) {}
 
-  virtual arrow::Status appendNull() { return _builder->AppendNull(); }
-  virtual arrow::Status append(std::string const& buffer) {
+  std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
+  arrow::Status appendNull() override { return _builder->AppendNull(); }
+  arrow::Status append(std::string const& buffer) override {
     if (buffer.empty()) {
       return _builder->AppendNull();
     } else {
@@ -214,8 +263,7 @@ public:
       return _builder->Append(value);
     }
   }
-
-  virtual arrow::Result<std::shared_ptr<arrow::Array>> build() { return _builder->Finish(); }
+  arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
 
 private:
   std::shared_ptr<arrow::Int32Builder> _builder;
@@ -225,8 +273,9 @@ class BooleanHandler : public RecordHandler {
 public:
   BooleanHandler() : _builder(std::make_shared<arrow::BooleanBuilder>()) {}
 
-  virtual arrow::Status appendNull() { return _builder->AppendNull(); }
-  virtual arrow::Status append(std::string const& buffer) {
+  std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
+  virtual arrow::Status appendNull() override { return _builder->AppendNull(); }
+  virtual arrow::Status append(std::string const& buffer) override {
     if (buffer.empty()) {
       return _builder->AppendNull();
     } else if (buffer.size() != 1) {
@@ -236,7 +285,7 @@ public:
     }
   }
 
-  virtual arrow::Result<std::shared_ptr<arrow::Array>> build() { return _builder->Finish(); }
+  virtual arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
 
 private:
   std::shared_ptr<arrow::BooleanBuilder> _builder;
@@ -246,8 +295,9 @@ class Int64Handler : public RecordHandler {
 public:
   Int64Handler() : _builder(std::make_shared<arrow::Int64Builder>()) {}
 
-  virtual arrow::Status appendNull() { return _builder->AppendNull(); }
-  virtual arrow::Status append(std::string const& buffer) {
+  std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
+  arrow::Status appendNull() override { return _builder->AppendNull(); }
+  arrow::Status append(std::string const& buffer) override {
     if (buffer.empty()) {
       return _builder->AppendNull();
     } else {
@@ -257,7 +307,7 @@ public:
     }
   }
 
-  virtual arrow::Result<std::shared_ptr<arrow::Array>> build() { return _builder->Finish(); }
+  arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
 
 private:
   std::shared_ptr<arrow::Int64Builder> _builder;
@@ -267,8 +317,9 @@ class Date32Handler : public RecordHandler {
 public:
   Date32Handler() : _builder(std::make_shared<arrow::Date32Builder>()) {}
 
-  virtual arrow::Status appendNull() { return _builder->AppendNull(); }
-  virtual arrow::Status append(std::string const& buffer) {
+  std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
+  arrow::Status appendNull() override { return _builder->AppendNull(); }
+  arrow::Status append(std::string const& buffer) override {
     if (buffer.empty()) {
       return _builder->AppendNull();
     } else {
@@ -278,7 +329,7 @@ public:
     }
   }
 
-  virtual arrow::Result<std::shared_ptr<arrow::Array>> build() { return _builder->Finish(); }
+  arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
 
 private:
   std::shared_ptr<arrow::Date32Builder> _builder;
@@ -290,20 +341,18 @@ public:
       _builder(std::make_shared<arrow::DurationBuilder>(arrow::duration(arrow::TimeUnit::NANO),
                                                         arrow::default_memory_pool())) {}
 
-  virtual arrow::Status appendNull() { return _builder->AppendNull(); }
-  virtual arrow::Status append(std::string const& buffer) {
+  std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
+  arrow::Status appendNull() override { return _builder->AppendNull(); }
+  arrow::Status append(std::string const& buffer) override {
     if (buffer.empty()) {
       return _builder->AppendNull();
     } else {
       int64_t nanos;
-      std::cout << "DURATION " << buffer.size() << std::endl;
       ARROW_RETURN_NOT_OK(get_duration(buffer, nanos));
-      std::cout << "DURATION OK";
       return _builder->Append(nanos);
     }
   }
-
-  virtual arrow::Result<std::shared_ptr<arrow::Array>> build() { return _builder->Finish(); }
+  arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
 
 private:
   std::shared_ptr<arrow::DurationBuilder> _builder;
@@ -315,8 +364,9 @@ public:
       _builder(
           std::make_shared<arrow::Time64Builder>(arrow::time64(arrow::TimeUnit::NANO), arrow::default_memory_pool())) {}
 
-  virtual arrow::Status appendNull() { return _builder->AppendNull(); }
-  virtual arrow::Status append(std::string const& buffer) {
+  std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
+  arrow::Status appendNull() override { return _builder->AppendNull(); }
+  arrow::Status append(std::string const& buffer) override {
     if (buffer.empty()) {
       return _builder->AppendNull();
     } else {
@@ -325,8 +375,7 @@ public:
       return _builder->Append(value);
     }
   }
-
-  virtual arrow::Result<std::shared_ptr<arrow::Array>> build() { return _builder->Finish(); }
+  arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
 
 private:
   std::shared_ptr<arrow::Time64Builder> _builder;
@@ -338,8 +387,9 @@ public:
       _builder(std::make_shared<arrow::TimestampBuilder>(arrow::timestamp(arrow::TimeUnit::MILLI),
                                                          arrow::default_memory_pool())) {}
 
-  virtual arrow::Status appendNull() { return _builder->AppendNull(); }
-  virtual arrow::Status append(std::string const& buffer) {
+  std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
+  arrow::Status appendNull() override { return _builder->AppendNull(); }
+  arrow::Status append(std::string const& buffer) override {
     if (buffer.empty()) {
       return _builder->AppendNull();
     } else {
@@ -348,8 +398,7 @@ public:
       return _builder->Append(value);
     }
   }
-
-  virtual arrow::Result<std::shared_ptr<arrow::Array>> build() { return _builder->Finish(); }
+  arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
 
 private:
   std::shared_ptr<arrow::TimestampBuilder> _builder;
@@ -359,10 +408,10 @@ class StringHandler : public RecordHandler {
 public:
   StringHandler() : _builder(std::make_shared<arrow::StringBuilder>()) {}
 
-  virtual arrow::Status appendNull() { return _builder->AppendNull(); }
-  virtual arrow::Status append(std::string const& buffer) { return _builder->Append(buffer); }
-
-  virtual arrow::Result<std::shared_ptr<arrow::Array>> build() { return _builder->Finish(); }
+  std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
+  arrow::Status appendNull() override { return _builder->AppendNull(); }
+  arrow::Status append(std::string const& buffer) override { return _builder->Append(buffer); }
+  arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
 
 private:
   std::shared_ptr<arrow::StringBuilder> _builder;
@@ -372,10 +421,10 @@ class BinaryHandler : public RecordHandler {
 public:
   BinaryHandler() : _builder(std::make_shared<arrow::BinaryBuilder>()) {}
 
-  virtual arrow::Status appendNull() { return _builder->AppendNull(); }
-  virtual arrow::Status append(std::string const& buffer) { return _builder->Append(buffer); }
-
-  virtual arrow::Result<std::shared_ptr<arrow::Array>> build() { return _builder->Finish(); }
+  std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
+  arrow::Status appendNull() override { return _builder->AppendNull(); }
+  arrow::Status append(std::string const& buffer) override { return _builder->Append(buffer); }
+  arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
 
 private:
   std::shared_ptr<arrow::BinaryBuilder> _builder;
@@ -385,8 +434,9 @@ class DoubleHandler : public RecordHandler {
 public:
   DoubleHandler() : _builder(std::make_shared<arrow::DoubleBuilder>()) {}
 
-  virtual arrow::Status appendNull() { return _builder->AppendNull(); }
-  virtual arrow::Status append(std::string const& buffer) {
+  std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
+  arrow::Status appendNull() override { return _builder->AppendNull(); }
+  arrow::Status append(std::string const& buffer) override {
     if (buffer.empty()) {
       return _builder->AppendNull();
     } else {
@@ -395,8 +445,7 @@ public:
       return _builder->Append(value);
     }
   }
-
-  virtual arrow::Result<std::shared_ptr<arrow::Array>> build() { return _builder->Finish(); }
+  arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
 
 private:
   std::shared_ptr<arrow::DoubleBuilder> _builder;
@@ -406,8 +455,9 @@ class FloatHandler : public RecordHandler {
 public:
   FloatHandler() : _builder(std::make_shared<arrow::FloatBuilder>()) {}
 
-  virtual arrow::Status appendNull() { return _builder->AppendNull(); }
-  virtual arrow::Status append(std::string const& buffer) {
+  std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
+  arrow::Status appendNull() override { return _builder->AppendNull(); }
+  arrow::Status append(std::string const& buffer) override {
     if (buffer.empty()) {
       return _builder->AppendNull();
     } else {
@@ -416,15 +466,14 @@ public:
       return _builder->Append(value);
     }
   }
-
-  virtual arrow::Result<std::shared_ptr<arrow::Array>> build() { return _builder->Finish(); }
+  arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
 
 private:
   std::shared_ptr<arrow::FloatBuilder> _builder;
 };
 
-arrow::Status createHandler(std::shared_ptr<arrow::Field> const& field, std::shared_ptr<RecordHandler>& results) {
-  switch (field->type()->id()) {
+arrow::Status createHandler(std::shared_ptr<arrow::DataType> const& dtype, std::shared_ptr<RecordHandler>& results) {
+  switch (dtype->id()) {
   case arrow::Type::type::BOOL:
     results = std::make_shared<BooleanHandler>();
     return arrow::Status::OK();
@@ -464,10 +513,15 @@ arrow::Status createHandler(std::shared_ptr<arrow::Field> const& field, std::sha
   case arrow::Type::type::BINARY:
     results = std::make_shared<BinaryHandler>();
     return arrow::Status::OK();
-
+  case arrow::Type::type::LIST: {
+    std::shared_ptr<arrow::ListType> listType = std::static_pointer_cast<arrow::ListType>(dtype);
+    std::shared_ptr<RecordHandler> itemHandler;
+    ARROW_RETURN_NOT_OK(createHandler(listType->value_type(), itemHandler));
+    results = std::make_shared<ListHandler>(listType, itemHandler);
+    return arrow::Status::OK();
+  }
   default:
-    return arrow::Status(arrow::StatusCode::TypeError,
-                         "Type not supported: " + field->name() + " " + field->type()->name());
+    return arrow::Status(arrow::StatusCode::TypeError, "Type not supported: " + dtype->name());
   }
 }
 
@@ -477,7 +531,7 @@ arrow::Status parseResults(std::string const& bytes,
 
   std::vector<std::shared_ptr<RecordHandler>> handlers(schema->num_fields());
   for (int index = 0; index < schema->num_fields(); ++index) {
-    ARROW_RETURN_NOT_OK(createHandler(schema->field(index), handlers[index]));
+    ARROW_RETURN_NOT_OK(createHandler(schema->field(index)->type(), handlers[index]));
   }
   std::istringstream stream{bytes};
 
@@ -493,8 +547,7 @@ arrow::Status parseResults(std::string const& bytes,
         buffer.clear();
         ARROW_RETURN_NOT_OK(handler->appendNull());
       } else {
-        buffer.resize(size);
-        stream.readsome(&buffer[0], size);
+        ARROW_RETURN_NOT_OK(readSome(stream, size, buffer));
         ARROW_RETURN_NOT_OK(handler->append(buffer));
       }
     }

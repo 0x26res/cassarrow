@@ -32,6 +32,9 @@ NATIVE_TYPES = {
 
 def get_arrow_type(dtype: CassandraTypeType) -> pa.DataType:
     typename = dtype.typename
+    if typename == "list":
+        assert len(dtype.subtypes) == 1
+        return pa.list_(get_arrow_type(dtype.subtypes[0]))
     try:
         return NATIVE_TYPES[typename]
     except KeyError:

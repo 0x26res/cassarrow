@@ -145,3 +145,52 @@ INSERT INTO cassarrow.primitives JSON '
   "varint_col": 1234567890123
 }
 ';
+
+
+
+CREATE TABLE cassarrow.simple_list
+(
+    partition_key varchar,
+    secondary_key varchar,
+
+    ascii_col     list<ascii>,
+    bigint_col    list<bigint>,
+    blob_col      list<blob>,
+    boolean_col   list<boolean>,
+    date_col      list<date>,
+    double_col    list<double>,
+    duration_col  list<duration>,
+    float_col     list<float>,
+    int_col       list<int>,
+    smallint_col  list<smallint>,
+    text_col      list<text>,
+    time_col      list<time>,
+    timestamp_col list<timestamp>,
+    tinyint_col   list<tinyint>,
+    varchar_col   list<varchar>,
+
+    PRIMARY KEY (partition_key, secondary_key)
+);
+
+
+INSERT INTO cassarrow.simple_list JSON '
+{
+  "partition_key": "test",
+  "secondary_key": "valid",
+  "ascii_col": ["hello world"],
+  "bigint_col": [1234567890],
+  "blob_col": ["0x0000000000000003"],
+  "boolean_col": [false],
+  "date_col": ["2021-12-14"],
+  "double_col": [3.14],
+  "duration_col": ["P4Y6M3DT12H30M5S"],
+  "float_col": [2.718],
+  "int_col": [1234],
+  "smallint_col": [280],
+  "text_col": ["ABC"],
+  "time_col": ["08:10:22.123"],
+  "timestamp_col": ["2017-05-05 00:00:00.000"],
+  "tinyint_col": [8],
+  "varchar_col": ["abc"]
+}
+';

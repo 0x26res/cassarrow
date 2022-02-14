@@ -155,6 +155,7 @@ def compare_query_results(session: cassandra.cluster.Session, query: str):
         actual = json.loads(json_records_actual[i])
         expected = json.loads(json_records_expected[i])
         assert actual == expected
+        print(json_records_expected[i])
 
 
 def test_query_arrow_against_json(session: cassandra.cluster.Session):
@@ -214,6 +215,31 @@ def test_query_arrow_simple_primitives_compare(session: cassandra.cluster.Sessio
     ]
 
     query = f"SELECT {', '.join(columns)} from cassarrow.simple_primitives where partition_key = 'test'"
+    compare_query_results(session, query)
+
+
+def test_query_arrow_simple_primitives_list_compare(session: cassandra.cluster.Session):
+    columns = [
+        "ascii_col",
+        "bigint_col",
+        # "blob_col",
+        "boolean_col",
+        "date_col",
+        "double_col",
+        "duration_col",
+        # "float_col",
+        "int_col",
+        "partition_key",
+        "secondary_key",
+        "smallint_col",
+        "text_col",
+        "time_col",
+        "timestamp_col",
+        "tinyint_col",
+        "varchar_col",
+    ]
+
+    query = f"SELECT {', '.join(columns)} from cassarrow.simple_list where partition_key = 'test'"
     compare_query_results(session, query)
 
 
