@@ -14,9 +14,7 @@ def get_days_data(date):
     return [
         (date, instrument_id, timestamp, random.random())
         for instrument_id in range(1, INSTRUMENTS)
-        for timestamp in pd.date_range(
-            date + pd.Timedelta("8h"), date + pd.Timedelta("17h"), freq=FREQUENCY
-        )
+        for timestamp in pd.date_range(date + pd.Timedelta("8h"), date + pd.Timedelta("17h"), freq=FREQUENCY)
     ]
 
 
@@ -35,11 +33,7 @@ def chunks(values, chunk_size):
 
 def populate_data(cluster, data):
     with cluster.connect("cassarrow") as session:
-        query = (
-            "INSERT INTO time_series"
-            " (event_date, instrument_id, event_timestamp, value)"
-            "VALUES (?, ?, ?, ?)"
-        )
+        query = "INSERT INTO time_series" " (event_date, instrument_id, event_timestamp, value)" "VALUES (?, ?, ?, ?)"
         insert_statement = session.prepare(query)
 
         for chunk in chunks(data, 142):

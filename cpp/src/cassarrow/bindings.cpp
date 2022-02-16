@@ -58,7 +58,7 @@ arrow::Status readSome(std::istringstream& stream, const int size, std::string& 
   if (stream.readsome(&output[0], size) == size) {
     return arrow::Status::OK();
   } else {
-    return arrow::Status::CapacityError("Not enough data");
+    return arrow::Status::CapacityError("Not enough data to read " + std::to_string(size));
   }
 }
 
@@ -204,6 +204,52 @@ public:
 private:
   std::shared_ptr<RecordHandler> _inner;
   std::shared_ptr<arrow::ListBuilder> _builder;
+  std::string _buffer;
+};
+
+std::vector<std::shared_ptr<arrow::ArrayBuilder>>
+getBuilders(std::vector<std::shared_ptr<RecordHandler>> const& handlers) {
+  std::vector<std::shared_ptr<arrow::ArrayBuilder>> results;
+  for (std::shared_ptr<RecordHandler> const& handler : handlers) {
+    results.push_back(handler->builder());
+  }
+  return results;
+}
+
+class StructHandler : public RecordHandler {
+public:
+  StructHandler(std::shared_ptr<arrow::StructType> const& structType,
+                std::vector<std::shared_ptr<RecordHandler>> const& fieldsHandlers) :
+      _fieldsHandlers(fieldsHandlers),
+      _builder(std::make_shared<arrow::StructBuilder>(
+          structType, arrow::default_memory_pool(), getBuilders(fieldsHandlers))) {}
+
+  std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
+  arrow::Status appendNull() override {
+    // TODO: Append null to each element?
+    return _builder->AppendNull(); }
+  arrow::Status append(std::string const& buffer) override {
+    std::istringstream stream(buffer);
+
+    ARROW_RETURN_NOT_OK(_builder->Append());
+    for (std::shared_ptr<RecordHandler> const& handler : _fieldsHandlers) {
+      int32_t elementSize;
+      ARROW_RETURN_NOT_OK(readPrimitive<int32_t>(stream, elementSize));
+      if (elementSize < 0) {
+        ARROW_RETURN_NOT_OK(handler->appendNull());
+      } else {
+        ARROW_RETURN_NOT_OK(readSome(stream, elementSize, _buffer));
+        ARROW_RETURN_NOT_OK(handler->append(_buffer));
+      }
+    }
+
+    return arrow::Status::OK();
+  }
+  arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
+
+private:
+  std::vector<std::shared_ptr<RecordHandler>> _fieldsHandlers;
+  std::shared_ptr<arrow::StructBuilder> _builder;
   std::string _buffer;
 };
 
@@ -430,6 +476,20 @@ private:
   std::shared_ptr<arrow::BinaryBuilder> _builder;
 };
 
+class FixedSizeBinaryHandler : public RecordHandler {
+public:
+  FixedSizeBinaryHandler(std::shared_ptr<arrow::FixedSizeBinaryType> const& fixedSizeBinaryType) :
+      _builder(std::make_shared<arrow::FixedSizeBinaryBuilder>(fixedSizeBinaryType)) {}
+
+  std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
+  arrow::Status appendNull() override { return _builder->AppendNull(); }
+  arrow::Status append(std::string const& buffer) override { return _builder->Append(buffer); }
+  arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
+
+private:
+  std::shared_ptr<arrow::FixedSizeBinaryBuilder> _builder;
+};
+
 class DoubleHandler : public RecordHandler {
 public:
   DoubleHandler() : _builder(std::make_shared<arrow::DoubleBuilder>()) {}
@@ -513,11 +573,28 @@ arrow::Status createHandler(std::shared_ptr<arrow::DataType> const& dtype, std::
   case arrow::Type::type::BINARY:
     results = std::make_shared<BinaryHandler>();
     return arrow::Status::OK();
+  case arrow::Type::type::FIXED_SIZE_BINARY: {
+    const std::shared_ptr<arrow::FixedSizeBinaryType> fixedSizeBinaryType =
+        std::static_pointer_cast<arrow::FixedSizeBinaryType>(dtype);
+    results = std::make_shared<FixedSizeBinaryHandler>(fixedSizeBinaryType);
+    return arrow::Status::OK();
+  }
   case arrow::Type::type::LIST: {
-    std::shared_ptr<arrow::ListType> listType = std::static_pointer_cast<arrow::ListType>(dtype);
+    const std::shared_ptr<arrow::ListType> listType = std::static_pointer_cast<arrow::ListType>(dtype);
     std::shared_ptr<RecordHandler> itemHandler;
     ARROW_RETURN_NOT_OK(createHandler(listType->value_type(), itemHandler));
     results = std::make_shared<ListHandler>(listType, itemHandler);
+    return arrow::Status::OK();
+  }
+  case arrow::Type::type::STRUCT: {
+    std::shared_ptr<arrow::StructType> structType = std::static_pointer_cast<arrow::StructType>(dtype);
+    std::vector<std::shared_ptr<RecordHandler>> handlers;
+    for (std::shared_ptr<arrow::Field> const& field : structType->fields()) {
+      std::shared_ptr<RecordHandler> fieldHandler;
+      ARROW_RETURN_NOT_OK(createHandler(field->type(), fieldHandler));
+      handlers.push_back(fieldHandler);
+    }
+    results = std::make_shared<StructHandler>(structType, handlers);
     return arrow::Status::OK();
   }
   default:
@@ -587,7 +664,7 @@ pybind11::object pyParseResults(pybind11::bytes const& bytes, pybind11::object s
 
 } // namespace
 
-PYBIND11_MODULE(bindings, m) {
+PYBIND11_MODULE(_cassarrow, m) {
   m.doc() = "pybind11 example plugin";
 
   m.def("say_hello", &sayHello, "Test stdout");

@@ -94,8 +94,8 @@ CREATE TABLE cassarrow.primitives
 
 
 INSERT INTO cassarrow.primitives JSON '{
-  "partition_key" : "test",
-  "secondary_key" : "empty",
+  "partition_key": "test",
+  "secondary_key": "empty",
   "ascii_col": null,
   "bigint_col": null,
   "blob_col": null,
@@ -146,8 +146,6 @@ INSERT INTO cassarrow.primitives JSON '
 }
 ';
 
-
-
 CREATE TABLE cassarrow.simple_list
 (
     partition_key varchar,
@@ -177,20 +175,93 @@ INSERT INTO cassarrow.simple_list JSON '
 {
   "partition_key": "test",
   "secondary_key": "valid",
-  "ascii_col": ["hello world"],
-  "bigint_col": [1234567890],
-  "blob_col": ["0x0000000000000003"],
-  "boolean_col": [false],
-  "date_col": ["2021-12-14"],
-  "double_col": [3.14],
-  "duration_col": ["P4Y6M3DT12H30M5S"],
-  "float_col": [2.718],
-  "int_col": [1234],
-  "smallint_col": [280],
-  "text_col": ["ABC"],
-  "time_col": ["08:10:22.123"],
-  "timestamp_col": ["2017-05-05 00:00:00.000"],
-  "tinyint_col": [8],
-  "varchar_col": ["abc"]
+  "ascii_col": [
+    "hello world"
+  ],
+  "bigint_col": [
+    1234567890
+  ],
+  "blob_col": [
+    "0x0000000000000003"
+  ],
+  "boolean_col": [
+    false
+  ],
+  "date_col": [
+    "2021-12-14"
+  ],
+  "double_col": [
+    3.14
+  ],
+  "duration_col": [
+    "P4Y6M3DT12H30M5S"
+  ],
+  "float_col": [
+    2.718
+  ],
+  "int_col": [
+    1234
+  ],
+  "smallint_col": [
+    280
+  ],
+  "text_col": [
+    "ABC"
+  ],
+  "time_col": [
+    "08:10:22.123"
+  ],
+  "timestamp_col": [
+    "2017-05-05 00:00:00.000"
+  ],
+  "tinyint_col": [
+    8
+  ],
+  "varchar_col": [
+    "abc"
+  ]
+}
+';
+
+CREATE TYPE cassarrow.basic_info (
+    birthday timestamp,
+    nationality text,
+    weight text,
+    height text,
+    phones frozen<list<text>>,
+    );
+
+CREATE TABLE cassarrow.cyclist_stats
+(
+    id       uuid PRIMARY KEY,
+    lastname text,
+    basics   FROZEN<basic_info>
+);
+
+
+INSERT INTO cassarrow.cyclist_stats JSON '
+{
+  "id": "50554d6e-29bb-11e5-b345-feff819cdc9f",
+  "lastname": "Smith",
+  "basics": {
+    "birthday": "2017-05-05 00:00:00.000",
+    "nationality": "British",
+    "weight": "70kg",
+    "height": "173cm",
+    "phones": [
+      "00447123123123",
+      "00447456456456"
+    ]
+  }
+}
+';
+
+
+
+INSERT INTO cassarrow.cyclist_stats JSON '
+{
+  "id": "50554d6e-29bb-11e5-b345-feff819cdc9a",
+  "lastname": "Missing",
+  "basics": null
 }
 ';

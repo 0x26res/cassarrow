@@ -1,26 +1,19 @@
 import datetime
 import json
+import typing
+import uuid
 
-import bindings
+import _cassarrow
 import cassandra.cluster
+import pandas as pd
 import pkg_resources
 import pyarrow as pa
 import pytest
-import pandas as pd
-import typing
-from cassandra.protocol import (
-    NumpyProtocolHandler,
-    _message_types_by_opcode,
-    _ProtocolHandler,
-)
+from cassandra.protocol import NumpyProtocolHandler, _message_types_by_opcode, _ProtocolHandler
 from cassandra.query import tuple_factory
 
-from cassarrow import (
-    ArrowProtocolHandler,
-    ArrowResultMessage,
-    metadata_to_schema,
-    record_batch_factory,
-)
+import cassarrow
+from cassarrow import ArrowResultMessage, metadata_to_schema
 
 
 @pytest.fixture()
@@ -29,8 +22,14 @@ def cluster() -> cassandra.cluster.Cluster:
 
 
 @pytest.fixture()
-def session(cluster: cassandra.cluster.Cluster) -> cassandra.cluster.Session:
+def session(cluster: cassandra.cluster.Cluster) -> typing.Iterator[cassandra.cluster.Session]:
     with cluster.connect("cassarrow") as s:
+        yield s
+
+
+@pytest.fixture()
+def cassarrow_session(session: cassandra.cluster.Session) -> typing.Iterator[cassandra.cluster.Session]:
+    with cassarrow.install_cassarrow(session) as s:
         yield s
 
 
@@ -54,15 +53,7 @@ class DebugProtocolHandler(_ProtocolHandler):
 
     @classmethod
     def decode_message(
-        cls,
-        protocol_version,
-        user_type_map,
-        stream_id,
-        flags,
-        opcode,
-        body,
-        decompressor,
-        result_metadata,
+        cls, protocol_version, user_type_map, stream_id, flags, opcode, body, decompressor, result_metadata
     ):
         print("_" * 10)
         print(type(protocol_version), protocol_version)
@@ -77,22 +68,12 @@ class DebugProtocolHandler(_ProtocolHandler):
         #     fp.write(body)
 
         return _ProtocolHandler.decode_message(
-            protocol_version,
-            user_type_map,
-            stream_id,
-            flags,
-            opcode,
-            body,
-            decompressor,
-            result_metadata,
+            protocol_version, user_type_map, stream_id, flags, opcode, body, decompressor, result_metadata
         )
 
 
 def test_query(session: cassandra.cluster.Session):
-    # session.client_protocol_handler = ArrowProtocolHandler
-    results = session.execute(
-        "SELECT * from cassarrow.time_series where event_date = '2019-10-01'"
-    )
+    results = session.execute("SELECT * from cassarrow.time_series where event_date = '2019-10-01'")
     rows = [r for r in results]
     print(results.column_names)
     print(results.column_types)
@@ -100,12 +81,9 @@ def test_query(session: cassandra.cluster.Session):
     print(rows[:5])
 
 
-def test_query_arrow(session: cassandra.cluster.Session):
-    session.client_protocol_handler = ArrowProtocolHandler
-    session.row_factory = record_batch_factory
-    results = session.execute(
-        "SELECT * from cassarrow.time_series where event_date = '2019-10-02'"
-    )
+def test_query_arrow(cassarrow_session: cassandra.cluster.Session):
+
+    results = cassarrow_session.execute("SELECT * from cassarrow.time_series where event_date = '2019-10-02'")
     schema = metadata_to_schema(results.column_names, results.column_types)
     rows = [r for r in results]
     print(len(rows[0]))
@@ -132,6 +110,11 @@ def dump_default(value: typing.Any) -> str:
         return value.isoformat()
     elif isinstance(value, pd.Timedelta):
         return dump_timedelta(value)
+    elif isinstance(value, bytes):
+        if len(value) == 16:
+            return str(uuid.UUID(bytes=value))
+        else:
+            return str(value)
     else:
         raise TypeError(type(value))
 
@@ -141,47 +124,34 @@ def compare_query_results(session: cassandra.cluster.Session, query: str):
     json_results = session.execute(query.replace("SELECT ", "SELECT JSON "))
     json_records_expected: list[str] = [r.json for r in json_results]
 
-    session.client_protocol_handler = ArrowProtocolHandler
-    session.row_factory = record_batch_factory
-    arrow_results = session.execute(query)
-    schema = metadata_to_schema(arrow_results.column_names, arrow_results.column_types)
-    rows = [r for r in arrow_results]
-    table = pa.Table.from_batches(rows, schema=schema)
-    json_records_actual = [
-        json.dumps(r, default=dump_default) for r in table.to_pylist()
-    ]
+    with cassarrow.install_cassarrow(session) as cassarrow_session:
+        arrow_results = cassarrow_session.execute(query)
+        schema = metadata_to_schema(arrow_results.column_names, arrow_results.column_types)
+        rows = [r for r in arrow_results]
+        table = pa.Table.from_batches(rows, schema=schema)
+
+    json_records_actual = [json.dumps(r, default=dump_default) for r in table.to_pylist()]
     assert len(json_records_actual) == len(json_records_expected)
     for i in range(len(json_records_actual)):
         actual = json.loads(json_records_actual[i])
         expected = json.loads(json_records_expected[i])
         assert actual == expected
-        print(json_records_expected[i])
 
 
 def test_query_arrow_against_json(session: cassandra.cluster.Session):
-    compare_query_results(
-        session, "SELECT * from cassarrow.time_series where event_date = '2019-10-02'"
-    )
+    compare_query_results(session, "SELECT * from cassarrow.time_series where event_date = '2019-10-02'")
 
 
-def test_query_arrow_empty(session: cassandra.cluster.Session):
-    session.client_protocol_handler = ArrowProtocolHandler
-    session.row_factory = record_batch_factory
-    results = session.execute(
-        "SELECT * from cassarrow.time_series where event_date = '2010-10-01'"
-    )
+def test_query_arrow_empty(cassarrow_session: cassandra.cluster.Session):
+    results = cassarrow_session.execute("SELECT * from cassarrow.time_series where event_date = '2010-10-01'")
     schema = metadata_to_schema(results.column_names, results.column_types)
     rows = [r for r in results]
     table = pa.Table.from_batches(rows, schema=schema)
     assert len(table) == 0
 
 
-def test_query_arrow_simple_primitives(session: cassandra.cluster.Session):
-    session.client_protocol_handler = ArrowProtocolHandler
-    session.row_factory = record_batch_factory
-    results = session.execute(
-        "SELECT * from cassarrow.simple_primitives where partition_key = 'test'"
-    )
+def test_query_arrow_simple_primitives(cassarrow_session: cassandra.cluster.Session):
+    results = cassarrow_session.execute("SELECT * from cassarrow.simple_primitives where partition_key = 'test'")
     schema = metadata_to_schema(results.column_names, results.column_types)
     rows = [r for r in results]
     print(len(rows[0]))
@@ -243,6 +213,11 @@ def test_query_arrow_simple_primitives_list_compare(session: cassandra.cluster.S
     compare_query_results(session, query)
 
 
+def test_query_arrow_udt(session: cassandra.cluster.Session):
+    query = f"SELECT * from cassarrow.cyclist_stats "
+    compare_query_results(session, query)
+
+
 def test_message_types_by_opcode():
     for k, v in _message_types_by_opcode.items():
         print(k, v)
@@ -252,9 +227,7 @@ def test_numpy_query(session: cassandra.cluster.Session):
     session.row_factory = tuple_factory
     session.client_protocol_handler = NumpyProtocolHandler
 
-    results = session.execute(
-        "SELECT * from cassarrow.time_series where event_date = '2019-10-01'"
-    )
+    results = session.execute("SELECT * from cassarrow.time_series where event_date = '2019-10-01'")
     np_batches = [b for b in results]
     print(results.column_names)
     print(results.column_types)
@@ -275,12 +248,6 @@ def test_from_data():
 
 
 def test_bindings():
-    bindings.parse_results(
-        bytes([0x0, 0x0, 0x0, 0x0]),
-        pa.schema(
-            [
-                pa.field("int", pa.int32()),
-                pa.field("double", pa.float64()),
-            ]
-        ),
+    _cassarrow.parse_results(
+        bytes([0x0, 0x0, 0x0, 0x0]), pa.schema([pa.field("int", pa.int32()), pa.field("double", pa.float64())])
     )
