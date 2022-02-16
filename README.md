@@ -57,25 +57,33 @@ du -sh /home/arthur/data/cassandra
 
 ## Installation
 
+
+
 ```shell
-python3 -m venv venv
+sudo apt install python3.9 python3.9-venv python3.9-dev
+
+
+python3.9 -m venv venv
 source venv/bin/activate
 pip install pip --upgrade
 pip install wheel
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
 
 ## Quick test
+
+* setuptools
+
+```shell
+rm -rf *.so build/ && python setup.py build_ext --inplace &&  PYTHONPATH=./ pytest tests/
+```
+
+* CMake (deprecated)
 
 ```shell
 cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target bindings -- -j 3 && PYTHONPATH=./:cmake-build-debug/cpp/ pytest tests
 ```
 
-## Build with setuptools
-
-```shell
-python setup.py build_ext --inplace
-```
 
 ## Resources
 

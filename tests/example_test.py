@@ -3,7 +3,6 @@ import json
 import typing
 import uuid
 
-import _cassarrow
 import cassandra.cluster
 import pandas as pd
 import pkg_resources
@@ -12,6 +11,7 @@ import pytest
 from cassandra.protocol import NumpyProtocolHandler, _message_types_by_opcode, _ProtocolHandler
 from cassandra.query import tuple_factory
 
+import _cassarrow
 import cassarrow
 from cassarrow import ArrowResultMessage, metadata_to_schema
 

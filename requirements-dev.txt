@@ -1,0 +1,9 @@
+cassandra-driver
+isort
+numpy
+pandas
+pre-commit
+pyarrow
+pybind11
+pytest
+tabulate

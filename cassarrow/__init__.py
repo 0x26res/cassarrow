@@ -2,11 +2,12 @@ import contextlib
 import io
 import typing
 
-import _cassarrow
 import cassandra.cluster
 import pyarrow as pa
 from cassandra.cqltypes import CassandraTypeType
 from cassandra.protocol import ResultMessage, _ProtocolHandler
+
+import _cassarrow
 
 NATIVE_TYPES = {
     "ascii": pa.string(),

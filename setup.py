@@ -1,5 +1,4 @@
 import pyarrow
-
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 from setuptools import setup
 
@@ -34,7 +33,7 @@ setup(
     description="An Apache Arrow adapter to Cassandra python driver",
     long_description="",
     ext_modules=ext_modules,
-    extras_require={"test": ["pytest", "pandas", "tabulate"]},
+    extras_require={"test": ["pytest", "pandas", "tabulate", "pre-commit"]},
     cmdclass={"build_ext": build_ext},
     zip_safe=False,
     python_requires=">=3.6",

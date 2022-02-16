@@ -9,3 +9,6 @@ line_length = 120
 [tool.black]
 line-length = 120
 target-version = ['py38']
+
+[mypy]
+python_version = 3.9

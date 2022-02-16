@@ -12,7 +12,7 @@ repos:
     rev: 'v0.812'  # Use the sha / tag you want to point at
     hooks:
     -   id: mypy
-        files: '^br'
+        files: 'cassarrow|test'
 -   repo: https://github.com/roy-ht/pre-commit-jupyter
     rev: v1.2.1
     hooks:
@@ -21,3 +21,9 @@ repos:
           - --remove-kernel-metadata
           - --pin-patterns
           - "[pin];[donotremove]"
+#-   repo: https://github.com/pycqa/isort
+#    rev: 5.10.1
+#    hooks:
+#      -   id: isort
+#          args: [--line-length, "120", --profile, black]
+#          name: isort (python)
