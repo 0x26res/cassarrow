@@ -5,7 +5,7 @@ import pandas as pd
 import pyarrow as pa
 import typing
 import uuid
-from cassandra.protocol import NumpyProtocolHandler, _ProtocolHandler
+from cassandra.protocol import _ProtocolHandler
 
 import cassarrow
 from cassarrow import metadata_to_schema
@@ -60,10 +60,6 @@ def prepare_value_for_dump(
 
 def prepare_record_for_dump(record: dict, names, types) -> dict:
     return {name: prepare_value_for_dump(record[name], dtype) for name, dtype in zip(names, types)}
-
-
-def test_include_numpy_protocol_handler():
-    assert NumpyProtocolHandler is not None
 
 
 class DebugProtocolHandler(_ProtocolHandler):

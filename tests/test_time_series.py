@@ -7,6 +7,10 @@ from cassandra.query import tuple_factory
 import cassarrow
 
 
+def test_include_numpy_protocol_handler():
+    assert NumpyProtocolHandler is not None
+
+
 def test_query(session: cassandra.cluster.Session):
     results = session.execute("SELECT * FROM cassarrow.time_series WHERE event_date = '2019-10-01' LIMIT  10")
     assert results.column_names == ["event_date", "instrument_id", "event_timestamp", "value"]

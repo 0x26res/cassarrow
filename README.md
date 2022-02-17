@@ -76,6 +76,28 @@ pip install wheel
 pip install -r requirements-dev.txt
 ```
 
+## Installation from source
+
+See https://arrow.apache.org/docs/developers/python.html#using-pip
+
+```shell
+sudo apt-get install libjemalloc-dev \
+    libboost-dev \
+    libboost-filesystem-dev \
+    libboost-system-dev \
+    libboost-regex-dev \
+    python-dev \
+    autoconf \
+    flex \
+    bison \
+    libarrow-python-dev
+python3.9 -m venv venv-from-source
+source venv-from-source/bin/activate
+pip install pip --upgrade
+pip install wheel
+pip install --no-binary pyarrow -r requirements-dev.txt
+```
+
 ## Quick test
 
 * setuptools
