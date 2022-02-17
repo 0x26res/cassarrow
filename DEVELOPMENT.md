@@ -79,13 +79,12 @@ cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target bindings 
 * Publish to pypi for tests
 * add C++ tests
 * Add reverse code (to inject from cassandra)
-* Supports for Map
-* Supports for Set
-* Supports for Tuple?
-* Supports for Decimal
-* Add time_uuid
-* Add counter
-* Add benchmark
+* Support for Map
+* Support for Tuple?
+* Support for Decimal
+* Support time_uuid
+* Support counter
+* Support benchmark
 * Move the code out of innit
 * Automate dump of binary files 
 
@@ -97,3 +96,4 @@ cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target bindings 
 * add list
 * Save files from cassandra in docker
 * Check the values make sense
+* Supports for Set
