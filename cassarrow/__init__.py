@@ -17,10 +17,9 @@ NATIVE_TYPES = {
     "counter": pa.int64(),
     "date": pa.date32(),
     "double": pa.float64(),
-    # "decimal": ???
     "duration": pa.duration("ns"),
     "float": pa.float32(),
-    "inet": pa.string(),
+    # "inet":
     "int": pa.int32(),
     "smallint": pa.int16(),
     "text": pa.string(),
@@ -37,7 +36,7 @@ NATIVE_TYPES = {
 def get_arrow_type(dtype: CassandraTypeType) -> pa.DataType:
     typename = dtype.typename
     cassname = dtype.cassname
-    if cassname == "ListType":
+    if cassname in ("ListType", "SetType"):
         assert len(dtype.subtypes) == 1
         return pa.list_(get_arrow_type(dtype.subtypes[0]))
     elif cassname == "UserType":

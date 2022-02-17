@@ -17,7 +17,6 @@ CREATE TABLE cassarrow.simple_primitives
 (
     partition_key varchar,
     secondary_key varchar,
-
     ascii_col     ascii,
     bigint_col    bigint,
     blob_col      blob,
@@ -146,6 +145,26 @@ INSERT INTO cassarrow.primitives JSON '
 }
 ';
 
+INSERT INTO cassarrow.simple_primitives JSON '{
+  "partition_key": "test",
+  "secondary_key": "duration_1",
+  "duration_col": "P4Y6M3DT12H30M5S"
+}';
+
+INSERT INTO cassarrow.simple_primitives JSON '{
+  "partition_key": "test",
+  "secondary_key": "duration_2",
+  "duration_col": "2mo10d12h"
+}';
+
+
+INSERT INTO cassarrow.simple_primitives JSON '{
+  "partition_key": "test",
+  "secondary_key": "duration_3",
+  "duration_col": "P0004-06-03T12:30:05"
+}';
+
+
 CREATE TABLE cassarrow.simple_list
 (
     partition_key varchar,
@@ -170,6 +189,12 @@ CREATE TABLE cassarrow.simple_list
     PRIMARY KEY (partition_key, secondary_key)
 );
 
+
+INSERT INTO cassarrow.simple_list JSON '
+{
+  "partition_key": "test",
+  "secondary_key": "empty"
+}';
 
 INSERT INTO cassarrow.simple_list JSON '
 {
@@ -223,6 +248,89 @@ INSERT INTO cassarrow.simple_list JSON '
 }
 ';
 
+
+
+
+
+CREATE TABLE cassarrow.simple_set
+(
+    partition_key varchar,
+    secondary_key varchar,
+
+    ascii_col     set<ascii>,
+    bigint_col    set<bigint>,
+    blob_col      set<blob>,
+    boolean_col   set<boolean>,
+    date_col      set<date>,
+    double_col    set<double>,
+    float_col     set<float>,
+    int_col       set<int>,
+    smallint_col  set<smallint>,
+    text_col      set<text>,
+    time_col      set<time>,
+    timestamp_col set<timestamp>,
+    tinyint_col   set<tinyint>,
+    varchar_col   set<varchar>,
+
+    PRIMARY KEY (partition_key, secondary_key)
+);
+
+INSERT INTO cassarrow.simple_set JSON '
+{
+  "partition_key": "test",
+  "secondary_key": "valid",
+  "ascii_col": [
+    "hello world"
+  ],
+  "bigint_col": [
+    1234567890
+  ],
+  "blob_col": [
+    "0x0000000000000003"
+  ],
+  "boolean_col": [
+    false
+  ],
+  "date_col": [
+    "2021-12-14"
+  ],
+  "double_col": [
+    3.14
+  ],
+  "float_col": [
+    2.718
+  ],
+  "int_col": [
+    1234
+  ],
+  "smallint_col": [
+    280
+  ],
+  "text_col": [
+    "ABC"
+  ],
+  "time_col": [
+    "08:10:22.123"
+  ],
+  "timestamp_col": [
+    "2017-05-05 00:00:00.000"
+  ],
+  "tinyint_col": [
+    8
+  ],
+  "varchar_col": [
+    "abc"
+  ]
+}
+';
+
+
+INSERT INTO cassarrow.simple_set JSON '{
+  "partition_key": "test",
+  "secondary_key": "empty"
+}';
+
+
 CREATE TYPE cassarrow.basic_info (
     birthday timestamp,
     nationality text,
@@ -266,31 +374,3 @@ INSERT INTO cassarrow.cyclist_stats JSON '
 }
 ';
 
-
-
-CREATE TABLE cassarrow.duration
-(
-    name     text PRIMARY KEY,
-    duration duration,
-    expected text
-);
-
-
-INSERT INTO cassarrow.duration JSON '{
-  "name": "P4Y6M3DT12H30M5S",
-  "duration": "P4Y6M3DT12H30M5S",
-  "expected": ""
-}';
-
-INSERT INTO cassarrow.duration JSON '{
-  "id": "2mo10d12h",
-  "duration": "2mo10d12h",
-  "expected": "",
-}';
-
-
-INSERT INTO cassarrow.duration JSON '{
-  "id": "P0004-06-03T12:30:05",
-  "duration": "P0004-06-03T12:30:05",
-  "expected": ""
-}';

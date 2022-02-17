@@ -16,7 +16,21 @@ def format_timedelta(timedelta: pd.Timedelta) -> str:
     year = components.days // 360
     month = (components.days - year * 360) // 30
     day = components.days - year * 360 - month * 30
-    return f"{year}y{month}mo{day}d{components.hours}h{components.minutes}m{components.seconds}s"
+    values = [
+        (year, "y"),
+        (month, "mo"),
+        (day, "d"),
+        (components.hours, "h"),
+        (components.minutes, "m"),
+        (components.seconds, "s"),
+    ]
+
+    while values and values[0][0] == 0:
+        values = values[1:]
+    while values and values[-1][0] == 0:
+        values = values[:-1]
+
+    return "".join([str(value) + unit for value, unit in values])
 
 
 def prepare_value_for_dump(
@@ -52,7 +66,7 @@ def prepare_value_for_dump(
     elif isinstance(dtype, cassandra.cqltypes.CassandraTypeType):
         if dtype.cassname == "UserType":
             return prepare_record_for_dump(value, dtype.fieldnames, dtype.subtypes)
-        elif dtype.cassname == "ListType":
+        elif dtype.cassname in ("ListType", "SetType"):
             return [prepare_value_for_dump(sub_value, dtype.subtypes[0]) for sub_value in value]
 
     raise TypeError(f"Not supported {dtype}")
@@ -122,8 +136,13 @@ def test_query_arrow_simple_primitives_compare(session: cassandra.cluster.Sessio
     compare_query_results(session, query)
 
 
-def test_query_arrow_simple_primitives_list_compare(session: cassandra.cluster.Session):
+def test_query_arrow_simple_list_compare(session: cassandra.cluster.Session):
     query = f"SELECT * FROM cassarrow.simple_list"
+    compare_query_results(session, query)
+
+
+def test_query_arrow_simple_set_compare(session: cassandra.cluster.Session):
+    query = f"SELECT * FROM cassarrow.simple_set"
     compare_query_results(session, query)
 
 

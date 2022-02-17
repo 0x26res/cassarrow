@@ -1,0 +1,5 @@
+Cassandra,pyarrow,Note
+list,pa.list_,
+map,,Not supported
+set,,Not supported
+udt,pa.struct,
