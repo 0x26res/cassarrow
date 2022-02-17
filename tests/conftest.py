@@ -1,1 +1,1 @@
-from fixtures import cassarrow_session, session, cluster
+from fixtures import cassarrow_session, cluster, session

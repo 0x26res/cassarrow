@@ -1,6 +1,7 @@
+import typing
+
 import cassandra.cluster
 import pytest
-import typing
 
 import cassarrow
 

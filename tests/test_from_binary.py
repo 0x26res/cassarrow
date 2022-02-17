@@ -1,9 +1,10 @@
-import _cassarrow
+import os
+
 import pkg_resources
 import pyarrow as pa
 from cassandra.protocol import _ProtocolHandler
-import os
 
+import _cassarrow
 import cassarrow
 from cassarrow import ArrowResultMessage
 
