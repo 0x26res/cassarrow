@@ -3,11 +3,16 @@ Arrow based Cassandra python driver
 
 ## TODO
 
-* Check the value make sense
+* More duration tests
+* Sort out the tooling
 * test every possible types https://github.com/datastax/cpp-driver/blob/151f3988e60434a740a9946c030c17ed6c9a7b9e/src/decoder.hpp#L495
 * add C++ tests
 * Add reverse code (to inject from cassandra)
-* Add type mapping documentation
+* Add type mapping documentation https://cassandra.apache.org/doc/latest/cassandra/cql/types.html
+* Supports for Map
+* Supports for Set
+* Supports for Tuple
+* Add benchmark
 
 ## Done
 
@@ -15,6 +20,7 @@ Arrow based Cassandra python driver
 * add with injector
 * add list
 * Save files from cassandra in docker 
+* Check the values make sense
 
 ## Cassandra set up
 
@@ -90,4 +96,5 @@ cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target bindings 
 
 * https://docs.docker.com/engine/install/linux-postinstall/
 * https://cassandra.apache.org/_/quickstart.html
+* https://pybind11.readthedocs.io/en/stable/compiling.html
   

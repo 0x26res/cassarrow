@@ -265,3 +265,32 @@ INSERT INTO cassarrow.cyclist_stats JSON '
   "basics": null
 }
 ';
+
+
+
+CREATE TABLE cassarrow.duration
+(
+    name     text PRIMARY KEY,
+    duration duration,
+    expected text
+);
+
+
+INSERT INTO cassarrow.duration JSON '{
+  "name": "P4Y6M3DT12H30M5S",
+  "duration": "P4Y6M3DT12H30M5S",
+  "expected": ""
+}';
+
+INSERT INTO cassarrow.duration JSON '{
+  "id": "2mo10d12h",
+  "duration": "2mo10d12h",
+  "expected": "",
+}';
+
+
+INSERT INTO cassarrow.duration JSON '{
+  "id": "P0004-06-03T12:30:05",
+  "duration": "P0004-06-03T12:30:05",
+  "expected": ""
+}';

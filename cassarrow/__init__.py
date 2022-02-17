@@ -72,6 +72,11 @@ class ArrowResultMessage(ResultMessage):
         self.parsed_rows = _cassarrow.parse_results(f.read(), schema)
 
 
+def result_set_to_table(result_set: cassandra.cluster.ResultSet) -> pa.Table:
+    schema = metadata_to_schema(result_set.column_names, result_set.column_types)
+    return pa.Table.from_batches(result_set, schema=schema)
+
+
 class ArrowProtocolHandler(_ProtocolHandler):
     message_types_by_opcode = _ProtocolHandler.message_types_by_opcode | {ArrowResultMessage.opcode: ArrowResultMessage}
 
