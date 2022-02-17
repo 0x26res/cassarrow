@@ -76,6 +76,8 @@ cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target bindings 
 
 ## TODO
 
+* Read https://realpython.com/pypi-publish-python-package/
+* Add benchmark
 * Publish to pypi for tests
 * add C++ tests
 * Add reverse code (to inject from cassandra)
@@ -84,9 +86,9 @@ cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target bindings 
 * Support for Decimal
 * Support time_uuid
 * Support counter
-* Support benchmark
-* Move the code out of innit
 * Automate dump of binary files 
+* Test nested UDT
+* Test list of UDT
 
 ## Done
 
@@ -97,3 +99,4 @@ cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target bindings 
 * Save files from cassandra in docker
 * Check the values make sense
 * Supports for Set
+* Move the code out of innit
