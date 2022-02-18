@@ -65,6 +65,15 @@ rm -rf *.so build/ && python setup.py build_ext --inplace &&  PYTHONPATH=./ pyte
 cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target bindings -- -j 3 && PYTHONPATH=./:cmake-build-debug/cpp/ pytest tests
 ```
 
+### Test library published in test pypi
+
+```shell
+python3.9 -m venv venv-test
+source venv-test/bin/activate
+pip install pip --upgrade
+pip install --no-binary pyarrow pyarrow
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/  cassarrow
+```
 
 ## Resources
 
@@ -77,7 +86,6 @@ cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target bindings 
 ## TODO
 
 * Read https://realpython.com/pypi-publish-python-package/
-* Add benchmark
 * Publish to pypi for tests
 * add C++ tests
 * Add reverse code (to inject from cassandra)
@@ -89,6 +97,7 @@ cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target bindings 
 * Automate dump of binary files 
 * Test nested UDT
 * Test list of UDT
+* Infer the schema from C++ code instead of python?
 
 ## Done
 

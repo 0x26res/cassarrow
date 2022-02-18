@@ -1,6 +1,14 @@
 # Cassarrow
 
-Arrow based Cassandra python driver
+Arrow based Cassandra python driver. 
+
+## TLDR;
+
+Speed up the cassandra python driver by using C++ to parse cassandra queries data as [Apache Arrow](https://arrow.apache.org/) tables.
+
+Key features:
+* 20x speed up in the parsing of results
+* Support for most native types, UDT, List and Set
 
 ## Getting Started
 
