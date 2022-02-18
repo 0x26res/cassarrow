@@ -18,7 +18,7 @@ def get_extension():
         cxx_std=11,
     )
     extension.extra_compile_args.append("-D_GLIBCXX_USE_CXX11_")
-
+    extension.extra_compile_args.append(f"-I{pyarrow.get_include()}")
     for library_dir in pyarrow.get_library_dirs():
         extension.extra_link_args.append(f"-L{library_dir}")
     for library in pyarrow.get_libraries():
