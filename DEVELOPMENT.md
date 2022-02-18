@@ -53,13 +53,13 @@ pip install --no-binary pyarrow -r requirements-dev.txt
 
 ## Quick test
 
-* setuptools
+### Using setuptools
 
 ```shell
 rm -rf *.so build/ && python setup.py build_ext --inplace &&  PYTHONPATH=./ pytest tests/
 ```
 
-* CMake (deprecated)
+### Using CMake (deprecated)
 
 ```shell
 cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target bindings -- -j 3 && PYTHONPATH=./:cmake-build-debug/cpp/ pytest tests

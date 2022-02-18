@@ -1,12 +1,10 @@
+import _cassarrow
 import os
-
 import pkg_resources
 import pyarrow as pa
-from cassandra.protocol import _ProtocolHandler
 
-import _cassarrow
 import cassarrow
-from cassarrow import ArrowResultMessage
+import cassarrow.impl
 
 
 def get_binary(name: str) -> bytes:
@@ -19,7 +17,7 @@ def test_from_dump():
     # TODO: document how to save the binary file / write script to extract binary
     # TODO: extract more binaries and compare with CSVs
     data = get_binary("5.bin")
-    msg_arrow = cassarrow.ArrowProtocolHandler.decode_message(5, {}, 3, 0, 8, data, None, [])
+    msg_arrow = cassarrow.impl.ArrowProtocolHandler.decode_message(5, {}, 3, 0, 8, data, None, [])
     assert isinstance(msg_arrow.parsed_rows, pa.RecordBatch)
     assert msg_arrow.parsed_rows.num_rows == 5000
     assert msg_arrow.parsed_rows.num_columns == 4
