@@ -102,6 +102,17 @@ class DebugProtocolHandler(_ProtocolHandler):
         )
 
 
+def compare_json(table, results, json_records_expected: list[str]):
+    json_records_actual = [
+        json.dumps(prepare_record_for_dump(r, results.column_names, results.column_types)) for r in table.to_pylist()
+    ]
+    assert len(json_records_actual) == len(json_records_expected)
+    for i in range(len(json_records_actual)):
+        actual = json.loads(json_records_actual[i])
+        expected = json.loads(json_records_expected[i])
+        assert actual == expected
+
+
 def compare_query_results(session: cassandra.cluster.Session, query: str):
     assert query.startswith("SELECT")
     json_results = session.execute(query.replace("SELECT ", "SELECT JSON "))
@@ -113,15 +124,7 @@ def compare_query_results(session: cassandra.cluster.Session, query: str):
         rows = [r for r in arrow_results]
         table = pa.Table.from_batches(rows, schema=schema)
 
-    json_records_actual = [
-        json.dumps(prepare_record_for_dump(r, arrow_results.column_names, arrow_results.column_types))
-        for r in table.to_pylist()
-    ]
-    assert len(json_records_actual) == len(json_records_expected)
-    for i in range(len(json_records_actual)):
-        actual = json.loads(json_records_actual[i])
-        expected = json.loads(json_records_expected[i])
-        assert actual == expected
+    compare_json(table, arrow_results, json_records_expected)
 
 
 def test_query_arrow_against_json(session: cassandra.cluster.Session):
