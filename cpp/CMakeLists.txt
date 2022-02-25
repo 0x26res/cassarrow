@@ -7,14 +7,14 @@ find_package(pybind11 REQUIRED)
 find_package(Arrow REQUIRED)
 
 add_library(
-        bindings
+        _cassarrow
         MODULE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/cassarrow/bindings.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/cassarrow/cassarrow.cpp
 )
 
 target_include_directories(
-        bindings
+        _cassarrow
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${Python3_INCLUDE_DIRS}
@@ -23,17 +23,17 @@ target_include_directories(
 )
 
 target_link_libraries(
-        bindings
+        _cassarrow
         pybind11::module
         arrow
         arrow_python
 )
 
-pybind11_extension(bindings)
-pybind11_strip(bindings)
+pybind11_extension(_cassarrow)
+pybind11_strip(_cassarrow)
 
 set_target_properties(
-        bindings
+        _cassarrow
         PROPERTIES
         CXX_VISIBILITY_PRESET "hidden"
         CUDA_VISIBILITY_PRESET "hidden")
