@@ -1,7 +1,9 @@
+import os
 import pathlib
+import typing
 
 import _cassarrow
-import os
+import cassandra.protocol
 import pkg_resources
 import pyarrow as pa
 import pytest
@@ -17,34 +19,32 @@ def get_binary(name: str) -> bytes:
         return fp.read()
 
 
-def get_binary_files(directory: pathlib.Path) -> list[pathlib.Path]:
-    ints = []
-    for file in os.listdir(directory):
-        if file.endswith(".bin"):
-            ints.append(int(file.split(".")[0]))
-    ints = sorted(ints)
-    return [directory / (str(file) + ".bin") for file in ints]
-
-
-@pytest.mark.parametrize("table", ["time_series", "simple_primitives"])
-def test_from_dump(table):
-    # table = "time_series"
+def load_all_data(table: str) -> typing.Iterator[bytes]:
     directory = pathlib.Path(pkg_resources.resource_filename(__name__, "data")) / table
-    batches = []
-    results = None
     for file in sorted(os.listdir(directory)):
         if file.endswith(".bin"):
             with (directory / file).open("rb") as fp:
-                data = fp.read()
-                batch = cassarrow.impl.ArrowProtocolHandler.decode_message(5, {}, 3, 0, 8, data, None, [])
-                batches.append(batch.parsed_rows)
-                results = batch
-    table = pa.Table.from_batches(batches)
+                yield fp.read()
 
-    expected_json = []
+
+def load_json(table: str) -> list[str]:
+    directory = pathlib.Path(pkg_resources.resource_filename(__name__, "data")) / table
     with (directory / "all.jsonl").open("r") as fp:
-        for line in fp:
-            expected_json.append(line.strip())
+        return [line.strip() for line in fp]
+
+
+@pytest.mark.parametrize("table_name", ["time_series", "simple_primitives"])
+def test_from_dump(table_name: str):
+    # table = "time_series"
+
+    batches = []
+    results = None
+    for data in load_all_data(table_name):
+        batch = cassarrow.impl.ArrowProtocolHandler.decode_message(5, {}, 3, 0, 8, data, None, [])
+        batches.append(batch.parsed_rows)
+        results = batch
+    table = pa.Table.from_batches(batches)
+    expected_json = load_json(table_name)
 
     compare_json(table, results, expected_json)
 

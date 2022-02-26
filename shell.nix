@@ -19,6 +19,7 @@ let
     tabulate
     jupyter
     pympler
+    pytest-benchmark
   ]);
   #boost = pkgs.boost.override { enableShared = false; enabledStatic = true; };
   

@@ -3,9 +3,6 @@
 
 #include <iostream>
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include <arrow/builder.h>
 #include <arrow/table.h>
 #include <parquet/api/io.h>
