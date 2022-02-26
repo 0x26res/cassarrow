@@ -11,13 +11,16 @@ README = (ROOT / "README.md").read_text()
 
 def get_extension():
     pyarrow.create_library_symlinks()
+    source_directory = ROOT / "cpp/src"
+
     extension = Pybind11Extension(
         "_cassarrow",
-        ["cpp/src/cassarrow/bindings.cpp"],
+        [str(source_directory / "cassarrow/bindings.cpp"), str(source_directory / "cassarrow/cassarrow.cpp")],
         define_macros=[("VERSION_INFO", __version__)],
         cxx_std=11,
     )
     extension.extra_compile_args.append("-D_GLIBCXX_USE_CXX11_")
+    extension.extra_compile_args.append(f"-I{source_directory}")
     extension.extra_compile_args.append(f"-I{pyarrow.get_include()}")
     for library_dir in pyarrow.get_library_dirs():
         extension.extra_link_args.append(f"-L{library_dir}")

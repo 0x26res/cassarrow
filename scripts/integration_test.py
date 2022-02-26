@@ -18,3 +18,4 @@ if __name__ == "__main__":
     with cluster.connect("cassarrow") as session:
         table = execute_cassarrow(session, QUERY)
         assert isinstance(table, pa.Table)
+        print("LOOKS OK")

@@ -7,3 +7,8 @@ pyarrow
 pybind11
 pytest
 tabulate
+pytest-benchmark
+jupyter
+pympler
+cibuildwheel
+black[jupyter]

@@ -62,7 +62,7 @@ rm -rf *.so build/ && python setup.py build_ext --inplace &&  PYTHONPATH=./ pyte
 ### Using CMake (deprecated)
 
 ```shell
-cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target bindings -- -j 3 && PYTHONPATH=./:cmake-build-debug/cpp/ pytest tests
+cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target _cassrrow -- -j 3 && PYTHONPATH=./:cmake-build-debug/cpp/ pytest tests
 ```
 
 ### Test library published in test pypi
@@ -73,6 +73,13 @@ source venv-test/bin/activate
 pip install pip --upgrade
 pip install --no-binary pyarrow pyarrow
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/  cassarrow
+python scripts/integration_test.py
+```
+
+### Get test data for local development
+
+```shell
+python scripts/dump_test_data.py 
 ```
 
 ## Resources
@@ -81,10 +88,11 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
 * https://cassandra.apache.org/_/quickstart.html
 * https://pybind11.readthedocs.io/en/stable/compiling.html
 
-
-
 ## TODO
 
+* make wheels
+* benchmark against numpy
+* automate benchmark
 * Read https://realpython.com/pypi-publish-python-package/
 * Publish to pypi for tests
 * add C++ tests
@@ -93,8 +101,7 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
 * Support for Tuple?
 * Support for Decimal
 * Support time_uuid
-* Support counter
-* Automate dump of binary files 
+* Support counter 
 * Test nested UDT
 * Test list of UDT
 * Infer the schema from C++ code instead of python?
@@ -109,3 +116,4 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
 * Check the values make sense
 * Supports for Set
 * Move the code out of innit
+* * Automate dump of binary files

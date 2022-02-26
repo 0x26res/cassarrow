@@ -3,14 +3,8 @@
 #include <arrow/builder.h>
 
 namespace cassarrow {
-class Int32Handler {
-public:
-  Int32Handler();
 
-  void append(std::string const& bytes);
-
-private:
-  std::shared_ptr<arrow::Int32Builder> _builder;
-};
-
+arrow::Status parseResults(std::string const& bytes,
+                           std::shared_ptr<arrow::Schema> const& schema,
+                           std::shared_ptr<arrow::RecordBatch>& results);
 } // namespace cassarrow

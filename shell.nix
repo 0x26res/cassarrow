@@ -17,6 +17,8 @@ let
     cassandra-driver
     pandas
     tabulate
+    jupyter
+    pympler
   ]);
   #boost = pkgs.boost.override { enableShared = false; enabledStatic = true; };
   
