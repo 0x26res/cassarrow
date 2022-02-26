@@ -59,10 +59,11 @@ pip install --no-binary pyarrow -r requirements-dev.txt
 rm -rf *.so build/ && python setup.py build_ext --inplace &&  PYTHONPATH=./ pytest tests/
 ```
 
-### Using CMake (deprecated)
+### Using CMake 
 
 ```shell
-cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target _cassrrow -- -j 3 && PYTHONPATH=./:cmake-build-debug/cpp/ pytest tests
+cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target _cassarrow -- -j 3 && PYTHONPATH=./:cmake-build-debug/cpp/ pytest tests
+cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target test_exe && ./cmake-build-debug/cpp/tests/test_exe
 ```
 
 ### Test library published in test pypi
