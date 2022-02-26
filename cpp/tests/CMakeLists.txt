@@ -10,7 +10,7 @@ add_executable(
         ${CMAKE_CURRENT_SOURCE_DIR}/cassarrow/test_cassarrow.cpp
         ${CMAKE_SOURCE_DIR}/cpp/src/cassarrow/cassarrow.cpp)
 
-target_include_directories(test_exe PRIVATE ${CMAKE_BINARY_DIR}/proto ${CMAKE_SOURCE_DIR}/cpp/src)
+target_include_directories(test_exe PRIVATE ${CMAKE_SOURCE_DIR}/cpp/src)
 
 target_link_libraries(
         test_exe

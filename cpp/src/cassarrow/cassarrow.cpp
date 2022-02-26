@@ -164,7 +164,10 @@ arrow::Status readPrimitive(std::string const& buffer, T& value) {
 template <class T>
 arrow::Status readPrimitive(std::istringstream& stream, T& value) {
   char buffer[sizeof(T)];
-  stream.read(buffer, sizeof(T));
+  const size_t read_size = stream.readsome(buffer, sizeof(T)) ;
+  if (read_size != sizeof(T)) {
+    return arrow::Status::CapacityError("Data not available " + std::to_string(sizeof(T)));
+  }
   return readPrimitive<T>(buffer, sizeof(T), value);
 }
 
