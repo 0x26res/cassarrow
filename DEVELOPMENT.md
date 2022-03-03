@@ -91,9 +91,8 @@ python scripts/dump_test_data.py
 
 ## TODO
 
-* make wheels
+* make wheels + automate
 * benchmark against numpy
-* automate benchmark
 * Read https://realpython.com/pypi-publish-python-package/
 * Publish to pypi for tests
 * add C++ tests
@@ -101,7 +100,6 @@ python scripts/dump_test_data.py
 * Support for Map
 * Support for Tuple?
 * Support for Decimal
-* Support time_uuid
 * Support counter 
 * Test nested UDT
 * Test list of UDT
@@ -117,4 +115,6 @@ python scripts/dump_test_data.py
 * Check the values make sense
 * Supports for Set
 * Move the code out of innit
-* * Automate dump of binary files
+* Automate dump of binary files
+* automate benchmark
+* Support time_uuid
