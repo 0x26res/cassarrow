@@ -1,13 +1,12 @@
+-r ./requirements.txt
+
 black[jupyter]
-cassandra-driver
 cibuildwheel
 isort
 jupyter
 numpy
 pandas
 pre-commit
-pyarrow
-pybind11
 pympler
 pytest
 pytest-benchmark
