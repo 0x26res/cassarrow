@@ -1,3 +1,5 @@
+--no-binary pyarrow
+
 cassandra-driver
 pandas
 pyarrow
