@@ -94,7 +94,6 @@ python scripts/dump_test_data.py
 * make wheels + automate
 * benchmark against numpy
 * Read https://realpython.com/pypi-publish-python-package/
-* Publish to pypi for tests
 * add C++ tests
 * Add reverse code (to inject from cassandra)
 * Support for Map
@@ -104,6 +103,7 @@ python scripts/dump_test_data.py
 * Test nested UDT
 * Test list of UDT
 * Infer the schema from C++ code instead of python?
+* github action: run casandra db (or split unit and integration tests)
 
 ## Done
 
