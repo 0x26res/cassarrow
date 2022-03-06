@@ -39,6 +39,9 @@ def get_arrow_type(dtype: CassandraTypeType) -> pa.DataType:
     if cassname in ("ListType", "SetType"):
         assert len(dtype.subtypes) == 1
         return pa.list_(get_arrow_type(dtype.subtypes[0]))
+    elif cassname == "MapType":
+        assert len(dtype.subtypes) == 2
+        return pa.map_(get_arrow_type(dtype.subtypes[0]), get_arrow_type(dtype.subtypes[1]), keys_sorted=True)
     elif cassname == "UserType":
         return pa.struct(
             [pa.field(name, get_arrow_type(subtype)) for name, subtype in zip(dtype.fieldnames, dtype.subtypes)]

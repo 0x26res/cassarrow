@@ -95,7 +95,6 @@ python scripts/dump_test_data.py
 * benchmark against numpy
 * Read https://realpython.com/pypi-publish-python-package/
 * add C++ tests
-* Add reverse code (to inject from cassandra)
 * Support for Map
 * Support for Tuple?
 * Support for Decimal
@@ -118,3 +117,7 @@ python scripts/dump_test_data.py
 * Automate dump of binary files
 * automate benchmark
 * Support time_uuid
+
+## Won't do
+
+* Add reverse code (to inject from cassandra) -> no possible without ad hoc code (ask how it can be done?)

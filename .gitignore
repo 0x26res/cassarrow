@@ -130,3 +130,5 @@ dmypy.json
 
 /venv-from-source
 /tests/data
+/tests/select
+/tests/insert

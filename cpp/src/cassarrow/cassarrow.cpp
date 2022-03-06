@@ -1,12 +1,10 @@
 #include <cassarrow/cassarrow.h>
 
-
 #include <iostream>
 
 #include <arrow/builder.h>
 #include <arrow/table.h>
 #include <parquet/api/io.h>
-
 
 namespace cassarrow {
 
@@ -55,10 +53,11 @@ inline size_t num_leading_zeros(int64_t value) {
 arrow::Status readSome(std::istringstream& stream, const int size, std::string& output) {
 
   output.resize(size);
-  if (stream.readsome(&output[0], size) == size) {
+  const int read_size = int(stream.readsome(&output[0], size));
+  if (read_size == size) {
     return arrow::Status::OK();
   } else {
-    return arrow::Status::CapacityError("Not enough data to read " + std::to_string(size));
+    return arrow::Status::CapacityError("Not enough data to read " + std::to_string(size) + " vs " + std::to_string(read_size));
   }
 }
 
@@ -164,9 +163,10 @@ arrow::Status readPrimitive(std::string const& buffer, T& value) {
 template <class T>
 arrow::Status readPrimitive(std::istringstream& stream, T& value) {
   char buffer[sizeof(T)];
-  const size_t read_size = stream.readsome(buffer, sizeof(T)) ;
+  const size_t read_size = stream.readsome(buffer, sizeof(T));
   if (read_size != sizeof(T)) {
-    return arrow::Status::CapacityError("Data not available " + std::to_string(sizeof(T)));
+    return arrow::Status::CapacityError("Data not available " + std::to_string(sizeof(T)) + " vs " +
+                                        std::to_string(read_size));
   }
   return readPrimitive<T>(buffer, sizeof(T), value);
 }
@@ -185,8 +185,7 @@ public:
     ARROW_RETURN_NOT_OK(readPrimitive<int32_t>(stream, elements));
     if (elements < 0) {
       ARROW_RETURN_NOT_OK(_builder->AppendNull());
-    }
-    else {
+    } else {
       ARROW_RETURN_NOT_OK(_builder->Append());
       for (int32_t element = 0; element < elements; ++element) {
         int32_t elementSize;
@@ -210,6 +209,64 @@ private:
   std::string _buffer;
 };
 
+class MapHandler : public RecordHandler {
+public:
+  MapHandler(std::shared_ptr<arrow::MapType> const& mapDataType,
+             std::shared_ptr<RecordHandler> const& keyHandler,
+             std::shared_ptr<RecordHandler> const& valueHandler) :
+      _keyHandler(keyHandler),
+      _valueHandler(valueHandler),
+      _builder(std::make_shared<arrow::MapBuilder>(
+          arrow::default_memory_pool(), keyHandler->builder(), valueHandler->builder(), mapDataType)) {}
+
+  std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
+  arrow::Status appendNull() override { return _builder->AppendNull(); }
+  arrow::Status append(std::string const& buffer) override {
+    std::istringstream stream{buffer};
+    int32_t elements;
+    ARROW_RETURN_NOT_OK(readPrimitive<int32_t>(stream, elements));
+    std::cout << "elements " << elements << std::endl;
+    if (elements < 0) {
+      ARROW_RETURN_NOT_OK(_builder->AppendNull());
+    } else {
+      ARROW_RETURN_NOT_OK(_builder->Append());
+      for (int32_t element = 0; element < elements; ++element) {
+        {
+          int32_t keySize;
+          ARROW_RETURN_NOT_OK(readPrimitive<int32_t>(stream, keySize));
+          std::cout << "element " << element << " key " << keySize << std::endl;
+          if (keySize < 0) {
+            ARROW_RETURN_NOT_OK(this->_keyHandler->appendNull());
+          } else {
+            ARROW_RETURN_NOT_OK(readSome(stream, keySize, _buffer));
+            ARROW_RETURN_NOT_OK(_keyHandler->append(_buffer));
+          }
+        }
+        {
+          int32_t valueSize;
+          ARROW_RETURN_NOT_OK(readPrimitive<int32_t>(stream, valueSize));
+          std::cout << "element " << element << " value " << valueSize << std::endl;
+          if (valueSize < 0) {
+            ARROW_RETURN_NOT_OK(this->_valueHandler->appendNull());
+          } else {
+            ARROW_RETURN_NOT_OK(readSome(stream, valueSize, _buffer));
+            ARROW_RETURN_NOT_OK(_valueHandler->append(_buffer));
+          }
+        }
+      }
+    }
+    return arrow::Status::OK();
+  }
+
+  arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
+
+private:
+  std::shared_ptr<RecordHandler> _keyHandler;
+  std::shared_ptr<RecordHandler> _valueHandler;
+  std::shared_ptr<arrow::MapBuilder> _builder;
+  std::string _buffer;
+};
+
 std::vector<std::shared_ptr<arrow::ArrayBuilder>>
 getBuilders(std::vector<std::shared_ptr<RecordHandler>> const& handlers) {
   std::vector<std::shared_ptr<arrow::ArrayBuilder>> results;
@@ -230,7 +287,8 @@ public:
   std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
   arrow::Status appendNull() override {
     // TODO: Append null to each element?
-    return _builder->AppendNull(); }
+    return _builder->AppendNull();
+  }
   arrow::Status append(std::string const& buffer) override {
     std::istringstream stream(buffer);
 
@@ -587,6 +645,14 @@ arrow::Status createHandler(std::shared_ptr<arrow::DataType> const& dtype, std::
     std::shared_ptr<RecordHandler> itemHandler;
     ARROW_RETURN_NOT_OK(createHandler(listType->value_type(), itemHandler));
     results = std::make_shared<ListHandler>(listType, itemHandler);
+    return arrow::Status::OK();
+  }
+  case arrow::Type::type::MAP: {
+    const std::shared_ptr<arrow::MapType> mapType = std::static_pointer_cast<arrow::MapType>(dtype);
+    std::shared_ptr<RecordHandler> keysHandler, valuesHandler;
+    ARROW_RETURN_NOT_OK(createHandler(mapType->key_type(), keysHandler));
+    ARROW_RETURN_NOT_OK(createHandler(mapType->value_type(), valuesHandler));
+    results = std::make_shared<MapHandler>(mapType, keysHandler, valuesHandler);
     return arrow::Status::OK();
   }
   case arrow::Type::type::STRUCT: {

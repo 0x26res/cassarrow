@@ -5,13 +5,14 @@ from cassandra.protocol import _ProtocolHandler
 import cassandra.cluster
 
 
-TO_SAVE = {
+SELECT_QUERIES = {
     "time_series": "SELECT * FROM cassarrow.time_series WHERE event_date = '2019-10-02'",
     "simple_primitives": "SELECT * FROM cassarrow.simple_primitives",
+    "simple_map": "SELECT * FROM cassarrow.simple_map",
 }
 
 
-def create_dump_protocol_handler(destination: pathlib.Path):
+def create_dump_select_protocol_handler(destination: pathlib.Path):
     class DumpProtocolHandler(_ProtocolHandler):
         @classmethod
         def decode_message(
@@ -29,7 +30,7 @@ def create_dump_protocol_handler(destination: pathlib.Path):
     return DumpProtocolHandler
 
 
-def dump_query(destination: pathlib.Path, query: str):
+def dump_select_query(destination: pathlib.Path, query: str):
     cluster = cassandra.cluster.Cluster()
     with cluster.connect("cassarrow") as connection:
 
@@ -42,16 +43,16 @@ def dump_query(destination: pathlib.Path, query: str):
                 fp.write(payload.json)
                 fp.write("\n")
 
-        connection.client_protocol_handler = create_dump_protocol_handler(destination)
+        connection.client_protocol_handler = create_dump_select_protocol_handler(destination)
         results = connection.execute(query)
         print(destination, len(list(results)))
 
 
 def dump_all():
-    for destination, query in TO_SAVE.items():
-        actual_destination = pathlib.Path("tests/data") / destination
+    for destination, query in SELECT_QUERIES.items():
+        actual_destination = pathlib.Path("tests/select") / destination
         actual_destination.mkdir(parents=True, exist_ok=True)
-        dump_query(actual_destination, query)
+        dump_select_query(actual_destination, query)
 
 
 if __name__ == "__main__":

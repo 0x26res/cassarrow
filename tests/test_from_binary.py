@@ -3,7 +3,6 @@ import pathlib
 import typing
 
 import _cassarrow
-import cassandra.protocol
 import pkg_resources
 import pyarrow as pa
 import pytest
@@ -14,13 +13,13 @@ from tests.test_compare_with_json import compare_json
 
 
 def get_binary(name: str) -> bytes:
-    full_name = pkg_resources.resource_filename(__name__, os.path.join("data", name))
+    full_name = pkg_resources.resource_filename(__name__, os.path.join("select", name))
     with open(full_name, "rb") as fp:
         return fp.read()
 
 
 def load_all_data(table: str) -> typing.Iterator[bytes]:
-    directory = pathlib.Path(pkg_resources.resource_filename(__name__, "data")) / table
+    directory = pathlib.Path(pkg_resources.resource_filename(__name__, "select")) / table
     for file in sorted(os.listdir(directory)):
         if file.endswith(".bin"):
             with (directory / file).open("rb") as fp:
@@ -28,12 +27,19 @@ def load_all_data(table: str) -> typing.Iterator[bytes]:
 
 
 def load_json(table: str) -> list[str]:
-    directory = pathlib.Path(pkg_resources.resource_filename(__name__, "data")) / table
+    directory = pathlib.Path(pkg_resources.resource_filename(__name__, "select")) / table
     with (directory / "all.jsonl").open("r") as fp:
         return [line.strip() for line in fp]
 
 
-@pytest.mark.parametrize("table_name", ["time_series", "simple_primitives"])
+@pytest.mark.parametrize(
+    "table_name",
+    [
+        "simple_map",
+        "time_series",
+        "simple_primitives",
+    ],
+)
 def test_from_dump(table_name: str):
     # table = "time_series"
 

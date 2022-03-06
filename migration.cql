@@ -56,7 +56,7 @@ INSERT INTO cassarrow.simple_primitives JSON '{
   "smallint_col": 280,
   "text_col": "ABC",
   "time_col": "08:10:22.123",
-  "timestamp_col": "2017-05-05 00:00:00.000",
+  "timestamp_col": "2017-05-05 21:01:29.123",
   "tinyint_col": 8,
   "varchar_col": "abc"
 }';
@@ -249,9 +249,6 @@ INSERT INTO cassarrow.simple_list JSON '
 ';
 
 
-
-
-
 CREATE TABLE cassarrow.simple_set
 (
     partition_key varchar,
@@ -374,3 +371,39 @@ INSERT INTO cassarrow.cyclist_stats JSON '
 }
 ';
 
+
+CREATE TABLE cassarrow.simple_map
+(
+    partition_key varchar,
+    secondary_key varchar,
+
+    ascii_col     map<ascii, ascii>,
+    bigint_col    map<bigint, bigint>,
+    blob_col      map<blob, blob>,
+    boolean_col   map<boolean, boolean>,
+    date_col      map<date, date>,
+    double_col    map<double, double>,
+    float_col     map<float, float>,
+    int_col       map<int, int>,
+    smallint_col  map<smallint, smallint>,
+    text_col      map<text, text>,
+    time_col      map<time, time>,
+    timestamp_col map<timestamp, timestamp>,
+    tinyint_col   map<tinyint, tinyint>,
+    varchar_col   map<varchar, varchar>,
+
+    PRIMARY KEY (partition_key, secondary_key)
+);
+
+INSERT INTO cassarrow.simple_map JSON '
+{
+  "partition_key": "test",
+  "secondary_key": "valid",
+  "ascii_col": {
+    "hello world":"hello world"
+  },
+  "bigint_col": {
+    "1234567890": 1234567890
+  }
+}
+';
