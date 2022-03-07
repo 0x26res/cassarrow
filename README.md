@@ -65,6 +65,6 @@ with cassarrow.install_cassarrow(session) as cassarrow_session:
 | Cassandra   | pyarrow     | Note          |
 |:------------|:------------|:--------------|
 | list        | `pa.list_`  |               |
-| map         |             | Not supported |
+| map         | `pa.map_`   |               |
 | set         | `pa.list_`  |               |
 | udt         | `pa.struct` |               |

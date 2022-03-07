@@ -95,7 +95,8 @@ python scripts/dump_test_data.py
 * benchmark against numpy
 * Read https://realpython.com/pypi-publish-python-package/
 * add C++ tests
-* Support for Map
+* test all map values
+* generate random data for tests?
 * Support for Tuple?
 * Support for Decimal
 * Support counter 
@@ -117,6 +118,7 @@ python scripts/dump_test_data.py
 * Automate dump of binary files
 * automate benchmark
 * Support time_uuid
+* Support for Map
 
 ## Won't do
 
