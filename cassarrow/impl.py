@@ -66,6 +66,7 @@ class ArrowResultMessage(ResultMessage):
     code_to_type = dict((v, k) for k, v in ResultMessage.type_codes.items())
 
     def recv_results_rows(self, f: io.BytesIO, protocol_version, user_type_map, result_metadata):
+        assert protocol_version >= 3
         self.recv_results_metadata(f, user_type_map)
         column_metadata = self.column_metadata or result_metadata
         self.column_names = [c[2] for c in column_metadata]

@@ -50,14 +50,16 @@ inline size_t num_leading_zeros(int64_t value) {
 #endif
 }
 
-arrow::Status readSome(std::istringstream& stream, const int size, std::string& output) {
+arrow::Status readSome(std::istringstream& stream, const int32_t size, std::string& output) {
 
   output.resize(size);
-  const int read_size = int(stream.readsome(&output[0], size));
+  const size_t read_size_raw = stream.readsome(&output[0], size);
+  const int read_size = int(read_size_raw);
   if (read_size == size) {
     return arrow::Status::OK();
   } else {
-    return arrow::Status::CapacityError("Not enough data to read " + std::to_string(size) + " vs " + std::to_string(read_size));
+    return arrow::Status::CapacityError("Not enough data to read " + std::to_string(size) + " vs " +
+                                        std::to_string(read_size) + " raw " + std::to_string(read_size_raw));
   }
 }
 
@@ -171,6 +173,22 @@ arrow::Status readPrimitive(std::istringstream& stream, T& value) {
   return readPrimitive<T>(buffer, sizeof(T), value);
 }
 
+
+arrow::Status readHandler(
+    std::istringstream& stream,
+    std::shared_ptr<RecordHandler> const& handler,
+    std::string& buffer) {
+  int32_t elementSize{0};
+  ARROW_RETURN_NOT_OK(readPrimitive<int32_t>(stream, elementSize));
+  if (elementSize < 0) {
+    ARROW_RETURN_NOT_OK(handler->appendNull());
+  } else {
+    ARROW_RETURN_NOT_OK(readSome(stream, elementSize, buffer));
+    ARROW_RETURN_NOT_OK(handler->append(buffer));
+  }
+  return arrow::Status::OK();
+}
+
 class ListHandler : public RecordHandler {
 public:
   ListHandler(std::shared_ptr<arrow::ListType> const& listDataType, std::shared_ptr<RecordHandler> const& inner) :
@@ -188,14 +206,7 @@ public:
     } else {
       ARROW_RETURN_NOT_OK(_builder->Append());
       for (int32_t element = 0; element < elements; ++element) {
-        int32_t elementSize;
-        ARROW_RETURN_NOT_OK(readPrimitive<int32_t>(stream, elementSize));
-        if (elementSize < 0) {
-          ARROW_RETURN_NOT_OK(this->_inner->appendNull());
-        } else {
-          ARROW_RETURN_NOT_OK(readSome(stream, elementSize, _buffer));
-          ARROW_RETURN_NOT_OK(_inner->append(_buffer));
-        }
+        ARROW_RETURN_NOT_OK(readHandler(stream, _inner, _buffer));
       }
     }
     return arrow::Status::OK();
@@ -209,6 +220,7 @@ private:
   std::string _buffer;
 };
 
+
 class MapHandler : public RecordHandler {
 public:
   MapHandler(std::shared_ptr<arrow::MapType> const& mapDataType,
@@ -217,7 +229,8 @@ public:
       _keyHandler(keyHandler),
       _valueHandler(valueHandler),
       _builder(std::make_shared<arrow::MapBuilder>(
-          arrow::default_memory_pool(), keyHandler->builder(), valueHandler->builder(), mapDataType)) {}
+          arrow::default_memory_pool(), keyHandler->builder(), valueHandler->builder(), mapDataType)) {
+  }
 
   std::shared_ptr<arrow::ArrayBuilder> builder() override { return _builder; }
   arrow::Status appendNull() override { return _builder->AppendNull(); }
@@ -225,34 +238,13 @@ public:
     std::istringstream stream{buffer};
     int32_t elements;
     ARROW_RETURN_NOT_OK(readPrimitive<int32_t>(stream, elements));
-    std::cout << "elements " << elements << std::endl;
     if (elements < 0) {
       ARROW_RETURN_NOT_OK(_builder->AppendNull());
     } else {
       ARROW_RETURN_NOT_OK(_builder->Append());
       for (int32_t element = 0; element < elements; ++element) {
-        {
-          int32_t keySize;
-          ARROW_RETURN_NOT_OK(readPrimitive<int32_t>(stream, keySize));
-          std::cout << "element " << element << " key " << keySize << std::endl;
-          if (keySize < 0) {
-            ARROW_RETURN_NOT_OK(this->_keyHandler->appendNull());
-          } else {
-            ARROW_RETURN_NOT_OK(readSome(stream, keySize, _buffer));
-            ARROW_RETURN_NOT_OK(_keyHandler->append(_buffer));
-          }
-        }
-        {
-          int32_t valueSize;
-          ARROW_RETURN_NOT_OK(readPrimitive<int32_t>(stream, valueSize));
-          std::cout << "element " << element << " value " << valueSize << std::endl;
-          if (valueSize < 0) {
-            ARROW_RETURN_NOT_OK(this->_valueHandler->appendNull());
-          } else {
-            ARROW_RETURN_NOT_OK(readSome(stream, valueSize, _buffer));
-            ARROW_RETURN_NOT_OK(_valueHandler->append(_buffer));
-          }
-        }
+        ARROW_RETURN_NOT_OK(readHandler(stream, _keyHandler, _buffer));
+        ARROW_RETURN_NOT_OK(readHandler(stream, _valueHandler, _buffer));
       }
     }
     return arrow::Status::OK();
@@ -261,9 +253,9 @@ public:
   arrow::Result<std::shared_ptr<arrow::Array>> build() override { return _builder->Finish(); }
 
 private:
-  std::shared_ptr<RecordHandler> _keyHandler;
-  std::shared_ptr<RecordHandler> _valueHandler;
-  std::shared_ptr<arrow::MapBuilder> _builder;
+  std::shared_ptr<RecordHandler> const _keyHandler;
+  std::shared_ptr<RecordHandler> const _valueHandler;
+  std::shared_ptr<arrow::MapBuilder> const _builder;
   std::string _buffer;
 };
 
@@ -294,14 +286,7 @@ public:
 
     ARROW_RETURN_NOT_OK(_builder->Append());
     for (std::shared_ptr<RecordHandler> const& handler : _fieldsHandlers) {
-      int32_t elementSize;
-      ARROW_RETURN_NOT_OK(readPrimitive<int32_t>(stream, elementSize));
-      if (elementSize < 0) {
-        ARROW_RETURN_NOT_OK(handler->appendNull());
-      } else {
-        ARROW_RETURN_NOT_OK(readSome(stream, elementSize, _buffer));
-        ARROW_RETURN_NOT_OK(handler->append(_buffer));
-      }
+      ARROW_RETURN_NOT_OK(readHandler(stream, handler, _buffer));
     }
 
     return arrow::Status::OK();
@@ -649,9 +634,10 @@ arrow::Status createHandler(std::shared_ptr<arrow::DataType> const& dtype, std::
   }
   case arrow::Type::type::MAP: {
     const std::shared_ptr<arrow::MapType> mapType = std::static_pointer_cast<arrow::MapType>(dtype);
-    std::shared_ptr<RecordHandler> keysHandler, valuesHandler;
+    std::shared_ptr<RecordHandler> keysHandler;
+    std::shared_ptr<RecordHandler> valuesHandler;
     ARROW_RETURN_NOT_OK(createHandler(mapType->key_type(), keysHandler));
-    ARROW_RETURN_NOT_OK(createHandler(mapType->value_type(), valuesHandler));
+    ARROW_RETURN_NOT_OK(createHandler(mapType->item_type(), valuesHandler));
     results = std::make_shared<MapHandler>(mapType, keysHandler, valuesHandler);
     return arrow::Status::OK();
   }
@@ -687,15 +673,7 @@ arrow::Status parseResults(std::string const& bytes,
   std::string buffer;
   for (int32_t row = 0; row < rows; ++row) {
     for (std::shared_ptr<RecordHandler> const& handler : handlers) {
-      int32_t size = 0;
-      ARROW_RETURN_NOT_OK(readPrimitive<int32_t>(stream, size));
-      if (size < 0) {
-        buffer.clear();
-        ARROW_RETURN_NOT_OK(handler->appendNull());
-      } else {
-        ARROW_RETURN_NOT_OK(readSome(stream, size, buffer));
-        ARROW_RETURN_NOT_OK(handler->append(buffer));
-      }
+      ARROW_RETURN_NOT_OK(readHandler(stream, handler, buffer));
     }
   }
 

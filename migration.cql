@@ -400,7 +400,7 @@ INSERT INTO cassarrow.simple_map JSON '
   "partition_key": "test",
   "secondary_key": "valid",
   "ascii_col": {
-    "hello world":"hello world"
+    "hello world":"hello world value"
   },
   "bigint_col": {
     "1234567890": 1234567890

@@ -69,6 +69,13 @@ def prepare_value_for_dump(
             return prepare_record_for_dump(value, dtype.fieldnames, dtype.subtypes)
         elif dtype.cassname in ("ListType", "SetType"):
             return [prepare_value_for_dump(sub_value, dtype.subtypes[0]) for sub_value in value]
+        elif dtype.cassname == "MapType":
+            return {
+                str(prepare_value_for_dump(key, dtype.subtypes[0])): prepare_value_for_dump(
+                    sub_value, dtype.subtypes[1]
+                )
+                for key, sub_value in value
+            }
 
     raise TypeError(f"Not supported {dtype}")
 
