@@ -2,15 +2,11 @@ name: Release
 
 on:
   push:
-    branches-ignore:
-      - "dependabot/**"
-      - "pre-commit-ci-update-config"
-  pull_request:
-    paths:
-      - setup.py
-      - .github/workflows/wheels.yml      
-      - cassarrow/*.py
-      - cpp/src/cassarrow/*
+    branches:
+      - "master"
+    pull_request:
+      branches:
+        - "master"
 
 env:
   cython: "0.29.28"
@@ -18,43 +14,6 @@ env:
   TWINE_NONINTERACTIVE: "1"
 
 jobs:
-
-#  sdist:
-#    runs-on: ubuntu-20.04
-#
-#    steps:
-#      - uses: actions/checkout@v2
-#
-#      - name: setup python
-#        uses: actions/setup-python@v2
-#        with:
-#          python-version: "3.8"
-#
-#      - name: install dependencies
-#        run: |
-#          pip install --upgrade pip build
-#          pip install cython=="${{ env.cython }}"
-#
-#      - name: build sdist
-#        run: |
-#          python setup.py fetch_libzmq
-#          python setup.py cython
-#          python -m build --sdist .
-#
-#      - uses: actions/upload-artifact@v2
-#        with:
-#          name: sdist
-#          path: "dist/*.tar.gz"
-#          if-no-files-found: error
-#
-#      - name: Publish to PyPI
-#        if: startsWith(github.ref, 'refs/tags/')
-#        env:
-#          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-#          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-#        run: |
-#          pip install twine
-#          twine upload --skip-existing dist/*.tar.gz
 
   wheel:
     runs-on: ${{ matrix.os }}
@@ -101,16 +60,9 @@ jobs:
               build: "cp39* cp310*"
 
           - os: ubuntu-20.04
-            name: manylinux1
-            cibw:
-              build: "cp36* cp37*"
-              skip: "*musllinux*"
-              manylinux_image: manylinux1
-
-          - os: ubuntu-20.04
             name: manylinux2010
             cibw:
-              build: "cp38* cp39* cp310* pp3*"
+              build: "cp39* cp310* pp3*"
               skip: "*musllinux*"
               manylinux_image: manylinux2010
 
@@ -118,30 +70,6 @@ jobs:
             name: musslinux
             cibw:
               skip: "*manylinux*"
-
-          - os: ubuntu-20.04
-            name: cp36-manylinux_aarch64
-            cibw:
-              build: "cp36*"
-              skip: "*musllinux*"
-              manylinux_image: manylinux2014
-              arch: aarch64
-
-          - os: ubuntu-20.04
-            name: cp37-manylinux_aarch64
-            cibw:
-              build: "cp37*"
-              skip: "*musllinux*"
-              manylinux_image: manylinux2014
-              arch: aarch64
-
-          - os: ubuntu-20.04
-            name: cp38-manylinux_aarch64
-            cibw:
-              build: "cp38*"
-              skip: "*musllinux*"
-              manylinux_image: manylinux2014
-              arch: aarch64
 
           - os: ubuntu-20.04
             name: cp39-manylinux_aarch64
@@ -159,24 +87,6 @@ jobs:
               manylinux_image: manylinux2014
               arch: aarch64
 
-          - os: windows-2019
-            name: win32
-            architecture: x86
-            cibw:
-              build: "cp*win32"
-
-          - os: windows-2016
-            name: win-pypy
-            architecture: x64
-            cibw:
-              build: "pp*win_amd64"
-
-          - os: windows-2019
-            name: win_amd64
-            architecture: x64
-            cibw:
-              build: "cp*win_amd64"
-
     steps:
       - uses: actions/checkout@v2
 
@@ -186,47 +96,11 @@ jobs:
           python-version: "3.8"
           architecture: ${{ matrix.architecture }}
 
-      - name: set Windows extra env for pypy
-        shell: bash
-        if: matrix.name == 'win-pypy'
-        # pypy builds libzmq as an Extension,
-        # doesn't bundle dlls (requires separate vcredist install, as pypy itself seems to)
-        # bundling external libzmq doesn't seem to work
-        run: |
-          echo 'CIBW_REPAIR_WHEEL_COMMAND_WINDOWS=' >> "$GITHUB_ENV"
-          echo 'CIBW_ENVIRONMENT_WINDOWS=' >> "$GITHUB_ENV"
-
-      - name: register qemu
-        if: contains(matrix.cibw.arch, 'aarch64')
-        run: |
-          docker run --rm --privileged hypriot/qemu-register:v4.2.0
-
-      - name: customize aarch64
-        if: contains(matrix.cibw.arch, 'aarch64')
-        # install zeromq-devel because building libzmq for arm takes too long
-        # it's not in default packages, but it is in epel-7
-        # this will be an older release than than other wheels
-        run: |
-          echo 'CIBW_BEFORE_ALL_LINUX=yum -y install epel-release && yum -y install zeromq-devel' >> "$GITHUB_ENV"
-
-      - name: customize mac-arm-64
-        if: contains(matrix.os, 'macos') && matrix.cibw.arch
-        run: |
-          sudo xcode-select -switch /Applications/Xcode_12.2.app
-          echo 'SDKROOT=/Applications/Xcode_12.2.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.0.sdk' >> "$GITHUB_ENV"
-          echo 'MACOSX_DEPLOYMENT_TARGET=10.15' >> "$GITHUB_ENV"
 
       - name: install dependencies
         run: |
           pip install --upgrade setuptools pip wheel
           pip install cibuildwheel=="${{ env.cibuildwheel }}" cython=="${{ env.cython }}"
-
-      - name: install windows dependencies
-        if: startsWith(matrix.os, 'win')
-        run: |
-          pip install delvewheel==0.0.12
-          python setup.py fetch_libzmq --dll
-          xcopy /i libzmq-dll C:\\libzmq-dll
 
       - name: show environment
         run: |
@@ -235,10 +109,6 @@ jobs:
       - name: list target wheels
         run: |
           python -m cibuildwheel . --print-build-identifiers
-
-      - name: compile Cython sources
-        run: |
-          python setup.py cython
 
       - name: build wheels
         run: |
@@ -250,11 +120,11 @@ jobs:
           path: "wheelhouse/*"
           if-no-files-found: error
 
-      - name: Publish wheels to PyPI
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: |
-          pip install twine
-          twine upload --skip-existing wheelhouse/*
+#      - name: Publish wheels to PyPI
+#        if: startsWith(github.ref, 'refs/tags/')
+#        env:
+#          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+#          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+#        run: |
+#          pip install twine
+#          twine upload --skip-existing wheelhouse/*

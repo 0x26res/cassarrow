@@ -18,6 +18,13 @@ docker run --rm --detach \
 docker run --rm -it --network cassandra nuvo/docker-cqlsh cqlsh cassandra 9042 --cqlversion='3.4.5'
 docker logs --follow cassandra
 
+
+
+```
+
+## Initial Set up
+
+```shell
 docker run --rm \
   --network cassandra \
   --volume "$(pwd)/migration.cql:/scripts/data.cql" \
@@ -26,9 +33,11 @@ docker run --rm \
   --env CQLVERSION=3.4.5 \
   nuvo/docker-cqlsh
 
+python ./scripts/populate_db.py 
+python ./scripts/dump_test_data.py 
 ```
 
-## Arrow Installation
+## Arrow Installation from source
 
 See https://arrow.apache.org/docs/developers/python.html#using-pip
 
