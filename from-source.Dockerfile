@@ -1,18 +1,8 @@
-#
-# https://github.com/cpp-projects-showcase/docker-images/tree/master/ubuntu2004
-#
-#FROM docker.io/ubuntu:20.04
+# Tries to install pyarrow from source and build the library
 FROM python:3.9
-MAINTAINER Denis Arnaud <denis.arnaud_github at m4x dot org>
-LABEL version="0.1"
 
 # Environment
 ENV container docker
-ENV HOME /home/build
-ENV LANGUAGE en_US:en
-ENV LANG en_US.UTF-8
-ENV LC_ALL $LANG
-
 
 # Update the system
 RUN echo 'APT::Get::Assume-Yes "true";' > /etc/apt/apt.conf.d/90-yes
@@ -37,8 +27,7 @@ RUN apt-get install -y cmake
 
 ADD ./ ./cassarrow
 
-RUN pip install --progress-bar=off --requirement=./cassarrow/requirements.txt
-
+RUN pip install --progress-bar=off --no-binary=pyarrow pyarrow
 RUN pip install --progress-bar=off ./cassarrow/
 
 # Cleaning

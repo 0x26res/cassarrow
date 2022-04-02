@@ -176,5 +176,19 @@ cmake-build-debug/cpp/src/_cassarrow.cpython-39-x86_64-linux-gnu.so
 ```
 
 
+# DOCKER BUILDS
+
+```shell
+docker build --tag=not-working    --file=not-working.Dockerfile .
+docker build --tag=working    --file=not-working.Dockerfile .
+docker build --tag=from-source    --file=from-source.Dockerfile .
+docker build --tag=same-toolchain --file=same-toolchain.Dockerfile .
+
+docker run  from-source  python -c "import _cassarrow; import pyarrow as pa; print(_cassarrow.parse_results(b'\0\0\0\1', pa.schema([])))"
+docker run  not-working  python -c "import _cassarrow; import pyarrow as pa; print(_cassarrow.parse_results(b'\0\0\0\1', pa.schema([])))"
+docker run  same-toolchain python -c "import _cassarrow; import pyarrow as pa; print(_cassarrow.parse_results(b'\0\0\0\1', pa.schema([])))"
+ 
+```
+Try this docker image: #FROM docker.io/ubuntu:20.04
 
 

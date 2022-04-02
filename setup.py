@@ -1,3 +1,4 @@
+import os
 import pathlib
 import pyarrow
 from pybind11.setup_helpers import Pybind11Extension, build_ext
@@ -7,6 +8,8 @@ __version__ = "0.0.1rc0"
 
 ROOT = pathlib.Path(__file__).parent
 README = (ROOT / "README.md").read_text()
+
+USE_CXX11_ABI = os.environ.get("USE_CXX11_ABI", "0")
 
 
 def get_extension():
@@ -19,7 +22,7 @@ def get_extension():
         define_macros=[("VERSION_INFO", __version__)],
         cxx_std=11,
     )
-    extension.extra_compile_args.append("-D_GLIBCXX_USE_CXX11_")
+    extension.extra_compile_args.append(f"-D_GLIBCXX_USE_CXX11_ABI={USE_CXX11_ABI}")
     extension.extra_compile_args.append(f"-I{source_directory}")
     extension.extra_compile_args.append(f"-I{pyarrow.get_include()}")
     for library_dir in pyarrow.get_library_dirs():
