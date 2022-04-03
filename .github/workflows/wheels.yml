@@ -39,7 +39,7 @@ jobs:
 #      CIBW_MANYLINUX_AARCH64_IMAGE: "${{ matrix.cibw.manylinux_image }}"
 #       CIBW_ARCHS_LINUX: "${{ matrix.cibw.arch || 'auto' }}"
 #       CIBW_ARCHS_MACOS: "${{ matrix.cibw.arch || 'auto' }}"
-      CIBW_REPAIR_BUILD_COMMAND: "${{ matrix.cibw.repair_build_command }}"
+      CIBW_REPAIR_WHEEL_COMMAND: "${{ matrix.cibw.repair_build_command }}"
 
     strategy:
       fail-fast: false
@@ -101,6 +101,7 @@ jobs:
       - name: show environment
         run: |
           pip freeze
+          export
 
       - name: list target wheels
         run: |
