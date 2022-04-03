@@ -57,7 +57,7 @@ jobs:
           - os: ubuntu-20.04
             name: manylinux2010
             cibw:
-              build: "cp39* cp310*"
+              build: "cp39-*x86_64 cp310-*x86_64"
               skip: "*musllinux*"
               manylinux_image: manylinux2010
               repair_build_command: 'pip install pyarrow && python -c "import pyarrow; pyarrow.create_library_symlinks()" && export LD_LIBRARY_PATH=/opt/_internal/cpython-3.9.9/lib/python3.9/site-packages/pyarrow/:$LD_LIBRARY_PATH && auditwheel repair -w {dest_dir} {wheel}'
