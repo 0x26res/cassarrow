@@ -4,7 +4,7 @@ import pyarrow
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 from setuptools import setup
 
-__version__ = "0.0.1rc0"
+__version__ = "0.1.0"
 
 ROOT = pathlib.Path(__file__).parent
 README = (ROOT / "README.md").read_text()
@@ -17,8 +17,8 @@ def get_extension():
     source_directory = ROOT / "cpp/src"
 
     extension = Pybind11Extension(
-        "_cassarrow",
-        [str(source_directory / "cassarrow/bindings.cpp"), str(source_directory / "cassarrow/cassarrow.cpp")],
+        name="_cassarrow",
+        sources=[str(source_directory / "cassarrow/bindings.cpp"), str(source_directory / "cassarrow/cassarrow.cpp")],
         define_macros=[("VERSION_INFO", __version__)],
         cxx_std=11,
     )
@@ -35,6 +35,7 @@ def get_extension():
 
 ext_modules = [get_extension()]
 setup(
+    name="cassarrow",
     description="An Apache Arrow adapter to Cassandra python driver",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -48,6 +49,10 @@ setup(
     ],
     packages=["cassarrow"],
     ext_modules=ext_modules,
+    install_requires= [
+        "pyarrow>=7.0.0",
+        "cassandra-driver",
+    ],
     extras_require={"test": ["pytest", "pandas", "tabulate"]},
     cmdclass={"build_ext": build_ext},
     zip_safe=False,

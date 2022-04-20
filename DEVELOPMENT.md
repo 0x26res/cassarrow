@@ -65,7 +65,7 @@ pip install --no-binary pyarrow -r requirements-dev.txt
 ### Using setuptools
 
 ```shell
-rm -rf *.so build/ && python setup.py build_ext --inplace &&  PYTHONPATH=./ pytest tests/
+rm -rf *.so build/ && USE_CXX11_ABI=0 python setup.py build_ext --inplace &&  PYTHONPATH=./ pytest tests/
 ```
 
 ### Using CMake 
@@ -98,10 +98,36 @@ python scripts/dump_test_data.py
 * https://cassandra.apache.org/_/quickstart.html
 * https://pybind11.readthedocs.io/en/stable/compiling.html
 
-## DOcker
+## Dicker
 ```shell
 docker build --tag cassarrow:beta  .
 docker run -it cassarrow:beta /bin/bash
+```
+
+## Version
+
+```shell
+bumpversion --current-version 0.1.0 patch setup.py cassarrow/__init__.py  --allow-dirty
+```
+
+## Wheel
+
+Build locally:
+```shell
+USE_CXX11_ABI=0 python setup.py sdist bdist_wheel
+tar tzf dist/cassarrow-0.0.0.tar.gz 
+unzip -l dist/cassarrow-0.0.0-cp39-cp39-linux_x86_64.whl 
+```
+
+Check sdist:
+```shell
+export USE_CXX11_ABI=0
+deactivate
+python3.9 -m venv test-venv
+source test-venv/bin/activate
+pip install ./dist/cassarrow-0.0.0.tar.gz 
+python -c "import _cassarrow; import pyarrow as pa; print(_cassarrow.parse_results(b'\0\0\0\1', pa.schema([])))"
+
 ```
 
 ## TODO

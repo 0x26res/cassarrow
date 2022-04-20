@@ -2,14 +2,6 @@
 requires = ["setuptools>=42", "wheel", "pybind11>=2.9.0", "pyarrow>=7.0.0"]
 build-backend = "setuptools.build_meta"
 
-[project]
-name = "cassarrow"
-dependencies = [
-    "pyarrow>=7.0.0",
-    "cassandra-driver",
-]
-requires-python = ">=3.9"
-version= "0.0.1rc0"
 
 [tool.isort]
 profile = "black"

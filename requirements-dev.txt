@@ -1,6 +1,8 @@
 -r ./requirements.txt
 
+black
 black[jupyter]
+bumpversion
 cibuildwheel
 isort
 jupyter
@@ -11,3 +13,4 @@ pympler
 pytest
 pytest-benchmark
 tabulate
+wheel
