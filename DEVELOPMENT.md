@@ -108,6 +108,10 @@ docker run -it cassarrow:beta /bin/bash
 
 * run from docker
 * make wheels + automate
+    * Add tests to wheels
+    * Add twine upload
+    * Create pypi page
+    * Read https://packaging.python.org/en/latest/
 * benchmark against numpy
 * Read https://realpython.com/pypi-publish-python-package/
 * add C++ tests

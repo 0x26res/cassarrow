@@ -45,9 +45,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-#          - os: macos-10.15
-#            name: mac
-#
+          - os: macos-10.15
+            name: mac
+            cibw:
+              build: "cp39-*x86_64 cp310-*x86_64"
+
 #          - os: macos-10.15
 #            name: mac-arm
 #            cibw:
