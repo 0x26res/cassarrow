@@ -1,10 +1,11 @@
 import os
 import pathlib
+
 import pyarrow
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 from setuptools import setup
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 ROOT = pathlib.Path(__file__).parent
 README = (ROOT / "README.md").read_text()
@@ -14,7 +15,7 @@ USE_CXX11_ABI = os.environ.get("USE_CXX11_ABI", "0")
 
 def get_extension():
     pyarrow.create_library_symlinks()
-    source_directory = ROOT / "cpp/src"
+    source_directory = ROOT / "cpp" / "src"
 
     extension = Pybind11Extension(
         name="_cassarrow",
@@ -51,10 +52,7 @@ setup(
     packages=["cassarrow"],
     ext_modules=ext_modules,
     package_dir={"": "./"},
-    install_requires= [
-        "pyarrow>=7.0.0",
-        "cassandra-driver",
-    ],
+    install_requires=["setuptools>=42", "wheel", "pybind11>=2.9.0", "pyarrow>=7.0.0", "cassandra-driver"],
     extras_require={"test": ["pytest", "pandas", "tabulate"]},
     cmdclass={"build_ext": build_ext},
     zip_safe=False,
