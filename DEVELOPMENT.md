@@ -138,6 +138,8 @@ python -c "import _cassarrow; import pyarrow as pa; print(_cassarrow.parse_resul
 
 ## TODO
 
+* Find a license
+* Upload a first version with wheels
 * run from docker
 * make wheels + automate
     * Add tests to wheels
