@@ -161,6 +161,8 @@ python -c "import _cassarrow; import pyarrow as pa; print(_cassarrow.parse_resul
   - [x] cp310-cp310-macosx_10_9_x86_64 (untested)
   - [x] cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
   - [x] cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+  - [ ] aarch64 -> Can't install arrow? Does it need to?
+  - [ ] windows
 ## Done
 
 * More duration tests
@@ -179,3 +181,14 @@ python -c "import _cassarrow; import pyarrow as pa; print(_cassarrow.parse_resul
 ## Won't do
 
 * Add reverse code (to inject from cassandra) -> no possible without ad hoc code (ask how it can be done?)
+
+# Aarch64 wheels issue
+
+```
+python -m pip wheel /project --wheel-dir=/tmp/cibuildwheel/built_wheel --no-deps
+command: /opt/python/cp39-cp39/bin/python /tmp/pip-standalone-pip-2_ppf9jw/__env_pip__.zip/pip install --ignore-installed --no-user --prefix /tmp/pip-build-env-yutkmtpz/overlay --no-warn-script-location --no-binary :none: --only-binary :none: -i https://pypi.org/simple -- 'setuptools>=42' wheel 'pybind11>=2.9.0' 'pyarrow>=7.0.0'
+```
+
+```
+
+```
