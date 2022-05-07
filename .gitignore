@@ -105,7 +105,8 @@ celerybeat.pid
 .env
 .venv
 env/
-venv/
+venv/7
+/venv/
 ENV/
 env.bak/
 venv.bak/
@@ -132,3 +133,8 @@ dmypy.json
 /tests/data
 /tests/select
 /tests/insert
+
+/test-venv/
+.idea/
+/cmake-build-debug/
+/wheelhouse

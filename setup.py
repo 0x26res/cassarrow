@@ -42,6 +42,7 @@ setup(
     url="https://github.com/0x26res/cassarrow",
     author="0x26res",
     author_email="0x26res@gmail.com",
+    version=__version__,
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
@@ -49,6 +50,7 @@ setup(
     ],
     packages=["cassarrow"],
     ext_modules=ext_modules,
+    package_dir={"": "./"},
     install_requires= [
         "pyarrow>=7.0.0",
         "cassandra-driver",

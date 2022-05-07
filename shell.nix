@@ -20,6 +20,8 @@ let
     jupyter
     pympler
     pytest-benchmark
+    wheel
+    build
   ]);
   #boost = pkgs.boost.override { enableShared = false; enabledStatic = true; };
   

@@ -120,6 +120,11 @@ tar tzf dist/cassarrow-0.0.0.tar.gz
 unzip -l dist/cassarrow-0.0.0-cp39-cp39-linux_x86_64.whl 
 ```
 
+Or
+```shell
+python -m build
+```
+
 Check sdist:
 ```shell
 export USE_CXX11_ABI=0
@@ -151,7 +156,11 @@ python -c "import _cassarrow; import pyarrow as pa; print(_cassarrow.parse_resul
 * Test list of UDT
 * Infer the schema from C++ code instead of python?
 * github action: run casandra db (or split unit and integration tests)
-
+* Wheels focus:
+  - [x] cp39-cp39-macosx_10_9_x86_64 (untesed)
+  - [x] cp310-cp310-macosx_10_9_x86_64 (untested)
+  - [x] cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+  - [x] cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 ## Done
 
 * More duration tests

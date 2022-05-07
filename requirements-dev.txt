@@ -2,6 +2,7 @@
 
 black
 black[jupyter]
+build
 bumpversion
 cibuildwheel
 isort
