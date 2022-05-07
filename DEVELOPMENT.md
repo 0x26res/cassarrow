@@ -98,7 +98,8 @@ python scripts/dump_test_data.py
 * https://cassandra.apache.org/_/quickstart.html
 * https://pybind11.readthedocs.io/en/stable/compiling.html
 
-## Dicker
+## Docker
+
 ```shell
 docker build --tag cassarrow:beta  .
 docker run -it cassarrow:beta /bin/bash
