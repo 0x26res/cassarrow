@@ -3,7 +3,7 @@ import io
 import typing
 
 import cassandra.cluster
-import pyarrow as pa
+import pyarrow as pa  # Must be imported before _cassarrow
 from cassandra.cqltypes import CassandraTypeType
 from cassandra.protocol import ResultMessage, _ProtocolHandler
 

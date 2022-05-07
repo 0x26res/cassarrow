@@ -136,8 +136,14 @@ python -c "import _cassarrow; import pyarrow as pa; print(_cassarrow.parse_resul
 
 ```
 
+```shell
+python -m twine upload --verbose --repository testpypi dist/
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ cassarrow==0.1.1
+```
+
 ## TODO
 
+* Why does it throw an error and need the LD_LIBRARY_PATH?
 * Find a license
 * Upload a first version with wheels
 * run from docker
