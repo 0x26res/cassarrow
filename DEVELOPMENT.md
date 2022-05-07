@@ -165,6 +165,7 @@ python -c "import _cassarrow; import pyarrow as pa; print(_cassarrow.parse_resul
   - [x] cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
   - [ ] aarch64 -> Can't install arrow? Does it need to?
   - [ ] windows
+  - [ ] simpler example: https://github.com/PyTables/PyTables/blob/master/.github/workflows/wheels.yml
 ## Done
 
 * More duration tests

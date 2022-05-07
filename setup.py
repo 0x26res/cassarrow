@@ -9,7 +9,7 @@ __version__ = "0.1.0"
 ROOT = pathlib.Path(__file__).parent
 README = (ROOT / "README.md").read_text()
 
-USE_CXX11_ABI = os.environ.get("USE_CXX11_ABI")
+USE_CXX11_ABI = os.environ.get("USE_CXX11_ABI", "0")
 
 
 def get_extension():
