@@ -1,17 +1,20 @@
 -r ./requirements.txt
-
 black
 black[jupyter]
 build
 bumpversion
 cibuildwheel
+humanize
 isort
 jupyter
+nbconvert[webpdf]
 numpy
 pandas
+pandoc
 pre-commit
 pympler
 pytest
 pytest-benchmark
 tabulate
+types-setuptools
 wheel

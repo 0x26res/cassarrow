@@ -3,13 +3,13 @@ ascii,pa.string(),
 bigint,pa.int64(),
 blob,pa.binary(),
 boolean,pa.bool_(),
-counter,,Not supported
+counter,,TODO
 date,pa.date32(),
-decimal,,Not supported
+decimal,,Incompatible
 double,pa.float64(),
 duration,pa.duration("ns"),
 float,pa.float32(),
-inet,,Not supported
+inet,,TODO
 int,pa.int32(),
 smallint,pa.int16(),
 text,pa.string(),
@@ -19,4 +19,4 @@ timeuuid,pa.binary(16),
 tinyint,pa.int8(),
 uuid,pa.binary(16),
 varchar,pa.string(),
-varint,,Not supported
+varint,,Incompatible

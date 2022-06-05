@@ -2,15 +2,19 @@ import pyarrow.csv as pa
 
 if __name__ == "__main__":
     print(
-        pa.read_csv("types.csv")
+        pa.read_csv("native_types.csv")
         .to_pandas()
-        .assign(pyarrow=lambda x: ("`" + x["pyarrow"] + "`").where(x["pyarrow"] != "", ""))
+        .assign(
+            pyarrow=lambda x: ("`" + x["pyarrow"] + "`").where(x["pyarrow"] != "", "")
+        )
         .to_markdown(index=False)
     )
 
     print(
         pa.read_csv("collections.csv")
         .to_pandas()
-        .assign(pyarrow=lambda x: ("`" + x["pyarrow"] + "`").where(x["pyarrow"] != "", ""))
+        .assign(
+            pyarrow=lambda x: ("`" + x["pyarrow"] + "`").where(x["pyarrow"] != "", "")
+        )
         .to_markdown(index=False)
     )

@@ -138,7 +138,7 @@ python -c "import _cassarrow; import pyarrow as pa; print(_cassarrow.parse_resul
 
 ```shell
 python -m twine upload --verbose --repository testpypi dist/
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ cassarrow==0.1.1
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ cassarrow==0.1.2
 ```
 
 ## TODO
@@ -153,9 +153,8 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
     * Create pypi page
     * Read https://packaging.python.org/en/latest/
 * benchmark against numpy
-* Read https://realpython.com/pypi-publish-python-package/
 * add C++ tests
-* test all map values
+* test all map values and keys
 * generate random data for tests?
 * Support for Tuple?
 * Support for Decimal
@@ -198,6 +197,14 @@ python -m pip wheel /project --wheel-dir=/tmp/cibuildwheel/built_wheel --no-deps
 command: /opt/python/cp39-cp39/bin/python /tmp/pip-standalone-pip-2_ppf9jw/__env_pip__.zip/pip install --ignore-installed --no-user --prefix /tmp/pip-build-env-yutkmtpz/overlay --no-warn-script-location --no-binary :none: --only-binary :none: -i https://pypi.org/simple -- 'setuptools>=42' wheel 'pybind11>=2.9.0' 'pyarrow>=7.0.0'
 ```
 
-```
+# Set up on Apple m1
 
+```
+intel
+/usr/local/opt/python@3.10/bin/python3 -m venv py310 --clear
+source py310/bin/activate
+pip install --upgrade pip setuptools wheel
+pip install --requirement requirements-dev.txt
+export LD_LIBRARY_PATH=$(python -c 'import pyarrow; print(pyarrow.get_library_dirs()[0])')
+rm -rf *.so build/ && USE_CXX11_ABI=0 python setup.py build_ext --inplace &&  PYTHONPATH=./ pytest tests/
 ```

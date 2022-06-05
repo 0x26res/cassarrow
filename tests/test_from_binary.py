@@ -19,7 +19,9 @@ def get_binary(name: str) -> bytes:
 
 
 def load_all_data(table: str) -> typing.Iterator[bytes]:
-    directory = pathlib.Path(pkg_resources.resource_filename(__name__, "select")) / table
+    directory = (
+        pathlib.Path(pkg_resources.resource_filename(__name__, "select")) / table
+    )
     for file in sorted(os.listdir(directory)):
         if file.endswith(".bin"):
             with (directory / file).open("rb") as fp:
@@ -27,7 +29,9 @@ def load_all_data(table: str) -> typing.Iterator[bytes]:
 
 
 def load_json(table: str) -> list[str]:
-    directory = pathlib.Path(pkg_resources.resource_filename(__name__, "select")) / table
+    directory = (
+        pathlib.Path(pkg_resources.resource_filename(__name__, "select")) / table
+    )
     with (directory / "all.jsonl").open("r") as fp:
         return [line.strip() for line in fp]
 
@@ -46,7 +50,9 @@ def test_from_dump(table_name: str):
     batches = []
     results = None
     for data in load_all_data(table_name):
-        batch = cassarrow.impl.ArrowProtocolHandler.decode_message(5, {}, 3, 0, 8, data, None, [])
+        batch = cassarrow.impl.ArrowProtocolHandler.decode_message(
+            5, {}, 3, 0, 8, data, None, []
+        )
         batches.append(batch.parsed_rows)
         results = batch
     table = pa.Table.from_batches(batches)
@@ -57,7 +63,8 @@ def test_from_dump(table_name: str):
 
 def test_from_empty():
     results = _cassarrow.parse_results(
-        bytes([0x0, 0x0, 0x0, 0x0]), pa.schema([pa.field("int", pa.int32()), pa.field("double", pa.float64())])
+        bytes([0x0, 0x0, 0x0, 0x0]),
+        pa.schema([pa.field("int", pa.int32()), pa.field("double", pa.float64())]),
     )
     assert isinstance(results, pa.RecordBatch)
     assert results.num_rows == 0

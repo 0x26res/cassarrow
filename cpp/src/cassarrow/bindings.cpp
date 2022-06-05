@@ -8,9 +8,9 @@
 #include <cassarrow/cassarrow.h>
 
 namespace {
-void sayHello() { std::cout << "HELLO" << std::endl; }
 
 pybind11::object pyParseResults(pybind11::bytes const& bytes, pybind11::object schema) {
+  arrow::py::import_pyarrow();
   arrow::Result<std::shared_ptr<arrow::Schema>> arrowSchema = arrow::py::unwrap_schema(schema.ptr());
 
   if (!arrowSchema.ok()) {
@@ -29,8 +29,7 @@ pybind11::object pyParseResults(pybind11::bytes const& bytes, pybind11::object s
 } // namespace
 
 PYBIND11_MODULE(_cassarrow, m) {
-  m.doc() = "pybind11 example plugin";
+  m.doc() = "Cassarrow: Put your cassandra driver on steroids";
 
-  m.def("say_hello", &sayHello, "Test stdout");
   m.def("parse_results", &pyParseResults, "Parse Results from cassandra");
 }

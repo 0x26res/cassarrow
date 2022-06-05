@@ -1,8 +1,6 @@
 import cassandra.protocol
-import cassandra.protocol
 
 import cassarrow
-import cassarrow.impl
 import cassarrow.impl
 from tests.test_from_binary import load_all_data
 

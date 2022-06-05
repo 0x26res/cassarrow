@@ -68,12 +68,15 @@ def prepare_value_for_dump(
         if dtype.cassname == "UserType":
             return prepare_record_for_dump(value, dtype.fieldnames, dtype.subtypes)
         elif dtype.cassname in ("ListType", "SetType"):
-            return [prepare_value_for_dump(sub_value, dtype.subtypes[0]) for sub_value in value]
+            return [
+                prepare_value_for_dump(sub_value, dtype.subtypes[0])
+                for sub_value in value
+            ]
         elif dtype.cassname == "MapType":
             return {
-                str(prepare_value_for_dump(key, dtype.subtypes[0])): prepare_value_for_dump(
-                    sub_value, dtype.subtypes[1]
-                )
+                str(
+                    prepare_value_for_dump(key, dtype.subtypes[0])
+                ): prepare_value_for_dump(sub_value, dtype.subtypes[1])
                 for key, sub_value in value
             }
 
@@ -81,7 +84,10 @@ def prepare_value_for_dump(
 
 
 def prepare_record_for_dump(record: dict, names, types) -> dict:
-    return {name: prepare_value_for_dump(record[name], dtype) for name, dtype in zip(names, types)}
+    return {
+        name: prepare_value_for_dump(record[name], dtype)
+        for name, dtype in zip(names, types)
+    }
 
 
 class DebugProtocolHandler(_ProtocolHandler):
@@ -102,16 +108,34 @@ class DebugProtocolHandler(_ProtocolHandler):
 
     @classmethod
     def decode_message(
-        cls, protocol_version, user_type_map, stream_id, flags, opcode, body, decompressor, result_metadata
+        cls,
+        protocol_version,
+        user_type_map,
+        stream_id,
+        flags,
+        opcode,
+        body,
+        decompressor,
+        result_metadata,
     ):
         return _ProtocolHandler.decode_message(
-            protocol_version, user_type_map, stream_id, flags, opcode, body, decompressor, result_metadata
+            protocol_version,
+            user_type_map,
+            stream_id,
+            flags,
+            opcode,
+            body,
+            decompressor,
+            result_metadata,
         )
 
 
 def compare_json(table, results, json_records_expected: list[str]):
     json_records_actual = [
-        json.dumps(prepare_record_for_dump(r, results.column_names, results.column_types)) for r in table.to_pylist()
+        json.dumps(
+            prepare_record_for_dump(r, results.column_names, results.column_types)
+        )
+        for r in table.to_pylist()
     ]
     assert len(json_records_actual) == len(json_records_expected)
     for i in range(len(json_records_actual)):
@@ -127,7 +151,9 @@ def compare_query_results(session: cassandra.cluster.Session, query: str):
 
     with cassarrow.install_cassarrow(session) as cassarrow_session:
         arrow_results = cassarrow_session.execute(query)
-        schema = metadata_to_schema(arrow_results.column_names, arrow_results.column_types)
+        schema = metadata_to_schema(
+            arrow_results.column_names, arrow_results.column_types
+        )
         rows = [r for r in arrow_results]
         table = pa.Table.from_batches(rows, schema=schema)
 
@@ -135,7 +161,9 @@ def compare_query_results(session: cassandra.cluster.Session, query: str):
 
 
 def test_query_arrow_against_json(session: cassandra.cluster.Session):
-    compare_query_results(session, "SELECT * FROM cassarrow.time_series WHERE event_date = '2019-10-02'")
+    compare_query_results(
+        session, "SELECT * FROM cassarrow.time_series WHERE event_date = '2019-10-02'"
+    )
 
 
 def test_query_arrow_simple_primitives(session: cassandra.cluster.Session):
@@ -143,20 +171,20 @@ def test_query_arrow_simple_primitives(session: cassandra.cluster.Session):
 
 
 def test_query_arrow_simple_primitives_compare(session: cassandra.cluster.Session):
-    query = f"SELECT * FROM cassarrow.simple_primitives"
+    query = "SELECT * FROM cassarrow.simple_primitives"
     compare_query_results(session, query)
 
 
 def test_query_arrow_simple_list_compare(session: cassandra.cluster.Session):
-    query = f"SELECT * FROM cassarrow.simple_list"
+    query = "SELECT * FROM cassarrow.simple_list"
     compare_query_results(session, query)
 
 
 def test_query_arrow_simple_set_compare(session: cassandra.cluster.Session):
-    query = f"SELECT * FROM cassarrow.simple_set"
+    query = "SELECT * FROM cassarrow.simple_set"
     compare_query_results(session, query)
 
 
 def test_query_arrow_udt(session: cassandra.cluster.Session):
-    query = f"SELECT * FROM cassarrow.cyclist_stats "
+    query = "SELECT * FROM cassarrow.cyclist_stats "
     compare_query_results(session, query)

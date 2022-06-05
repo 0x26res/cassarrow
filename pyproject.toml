@@ -2,14 +2,12 @@
 requires = ["setuptools>=42", "wheel", "pybind11>=2.9.0", "pyarrow>=7.0.0"]
 build-backend = "setuptools.build_meta"
 
-
 [tool.isort]
 profile = "black"
-line_length = 120
+known_first_party = ["_cassarow"]
 
 [tool.black]
-line-length = 120
-target-version = ['py38']
+target-version = ['py39']
 
 [mypy]
 python_version = 3.9
