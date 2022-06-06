@@ -16,5 +16,6 @@ pympler
 pytest
 pytest-benchmark
 tabulate
+twine
 types-setuptools
 wheel
