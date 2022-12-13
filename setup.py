@@ -24,16 +24,15 @@ def get_extension():
             str(source_directory / "cassarrow/cassarrow.cpp"),
         ],
         define_macros=[("VERSION_INFO", __version__)],
-        cxx_std=11,
+        cxx_std=17,
+        library_dirs=pyarrow.get_library_dirs(),
+        libraries=pyarrow.get_libraries(),
+        runtime_library_dirs=pyarrow.get_library_dirs(),
+        include_dirs=[source_directory, pyarrow.get_include()],
     )
     if USE_CXX11_ABI is not None:
         extension.extra_compile_args.append(f"-D_GLIBCXX_USE_CXX11_ABI={USE_CXX11_ABI}")
-    extension.extra_compile_args.append(f"-I{source_directory}")
-    extension.extra_compile_args.append(f"-I{pyarrow.get_include()}")
-    for library_dir in pyarrow.get_library_dirs():
-        extension.extra_link_args.append(f"-L{library_dir}")
-    for library in pyarrow.get_libraries():
-        extension.extra_link_args.append(f"-l{library}")
+
     return extension
 
 
@@ -59,7 +58,7 @@ setup(
     ],
     packages=["cassarrow"],
     ext_modules=ext_modules,
-    package_dir={"": "./"},
+    package_dir={"cassarrow": "cassarrow"},
     install_requires=[
         "setuptools>=42",
         "wheel",
