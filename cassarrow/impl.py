@@ -58,7 +58,7 @@ def get_arrow_type(dtype: CassandraTypeType) -> pa.DataType:
         raise TypeError(f"{typename}: {dtype}")
 
 
-def column_metadata_to_schema(column_metadata: list[tuple]) -> pa.Schema:
+def column_metadata_to_schema(column_metadata: list) -> pa.Schema:
     return pa.schema(
         [
             pa.field(column_name, get_arrow_type(dtype))
@@ -67,7 +67,7 @@ def column_metadata_to_schema(column_metadata: list[tuple]) -> pa.Schema:
     )
 
 
-def metadata_to_schema(names: list[str], dtypes: list[CassandraTypeType]):
+def metadata_to_schema(names: list, dtypes: list):
     return pa.schema(
         [pa.field(name, get_arrow_type(dtype)) for name, dtype in zip(names, dtypes)]
     )
@@ -98,21 +98,19 @@ def result_set_to_table(result_set: cassandra.cluster.ResultSet) -> pa.Table:
 
 
 class ArrowProtocolHandler(_ProtocolHandler):
-    message_types_by_opcode = _ProtocolHandler.message_types_by_opcode | {
-        ArrowResultMessage.opcode: ArrowResultMessage
-    }
+    message_types_by_opcode = {**_ProtocolHandler.message_types_by_opcode, **{ArrowResultMessage.opcode: ArrowResultMessage}}
 
 
 def record_batch_factory(
-    colnames: list[str], rows: pa.RecordBatch
-) -> tuple[pa.RecordBatch]:
+    colnames: list, rows: pa.RecordBatch
+) -> tuple:
     return (rows,)
 
 
 @contextlib.contextmanager
 def install_cassarrow(
     session: cassandra.cluster.Session,
-) -> typing.Iterator[cassandra.cluster.Session]:
+) -> typing.Iterator:
     row_factory, client_protocol_handler = (
         session.row_factory,
         session.client_protocol_handler,
