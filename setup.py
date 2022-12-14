@@ -50,6 +50,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Development Status :: 4 - Beta",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: C++",
@@ -69,5 +70,5 @@ setup(
     extras_require={"test": ["pytest", "pandas", "tabulate"]},
     cmdclass={"build_ext": build_ext},
     zip_safe=False,
-    python_requires=">=3.9",
+    python_requires=">=3.8",
 )
