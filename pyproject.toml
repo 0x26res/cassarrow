@@ -52,8 +52,15 @@ folders = [ {path = "cassarrow"}]
 script = "build.py"
 
 [build-system]
-requires = ["setuptools>=42", "wheel", "pybind11>=2.9.0", "pyarrow>=7.0.0"]
-build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools>=42",
+    "wheel",
+    "pybind11>=2.9.0",
+    "pyarrow>=7.0.0",
+    "poetry-dynamic-versioning",
+    "poetry-core>=1.0.0"
+]
+build-backend = "poetry_dynamic_versioning.backend"
 
 [tool.isort]
 profile = "black"
