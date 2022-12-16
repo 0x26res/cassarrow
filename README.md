@@ -1,3 +1,10 @@
+[![PyPI Version][pypi-image]][pypi-url]
+[![Python Version][versions-image]][versions-url]
+[![Github Stars][stars-image]][stars-url]
+[![Build Status][build-image]][build-url]
+[![License][license-image]][license-url]
+
+
 # Cassarrow
 
 Arrow based Cassandra python driver. 
@@ -67,3 +74,16 @@ with cassarrow.install_cassarrow(session) as cassarrow_session:
 | map         | `pa.map_`   |        |
 | set         | `pa.list_`  |        |
 | udt         | `pa.struct` |        |
+
+
+
+[pypi-image]: https://img.shields.io/pypi/v/cassarrow
+[pypi-url]: https://pypi.org/project/cassarrow/
+[build-image]: https://github.com/0x26res/cassarrow/actions/workflows/build.yaml/badge.svg
+[build-url]: https://github.com/0x26res/cassarrow/actions/workflows/build.yaml
+[stars-image]: https://img.shields.io/github/stars/0x26res/cassarrow
+[stars-url]: https://github.com/0x26res/cassarrow
+[versions-image]: https://img.shields.io/pypi/pyversions/cassarrow
+[versions-url]: https://pypi.org/project/cassarrow/
+[license-image]: http://img.shields.io/:license-Apache%202-blue.svg
+[license-url]: https://github.com/0x26res/cassarrow/blob/master/LICENSE.txt
