@@ -32,9 +32,9 @@ jobs:
         run: |
           poetry install
 
-      - name: Run tests
+      - name: Run Tests
         run: |
-          poetry run pytest tests/test_from_binary.py
+          poetry run python -c "import cassarrow;print(cassarrow.__version__)"
           poetry run pre-commit run --all
         
 
