@@ -5,7 +5,7 @@ import sys
 import pyarrow
 from pybind11.setup_helpers import Pybind11Extension, build_ext
 
-__version__ = "0.2.0"
+__version__ = "0.0.0"
 
 ROOT = pathlib.Path(__file__).parent
 README = (ROOT / "README.md").read_text()
