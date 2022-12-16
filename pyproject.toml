@@ -55,6 +55,7 @@ script = "build.py"
 requires = [
     "setuptools>=42",
     "wheel",
+    "build",
     "pybind11>=2.9.0",
     "pyarrow>=7.0.0",
     "poetry-dynamic-versioning",
