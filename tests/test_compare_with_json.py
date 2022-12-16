@@ -130,7 +130,7 @@ class DebugProtocolHandler(_ProtocolHandler):
         )
 
 
-def compare_json(table, results, json_records_expected: list[str]):
+def compare_json(table, results, json_records_expected: typing.List[str]):
     json_records_actual = [
         json.dumps(
             prepare_record_for_dump(r, results.column_names, results.column_types)
@@ -147,7 +147,7 @@ def compare_json(table, results, json_records_expected: list[str]):
 def compare_query_results(session: cassandra.cluster.Session, query: str):
     assert query.startswith("SELECT")
     json_results = session.execute(query.replace("SELECT ", "SELECT JSON "))
-    json_records_expected: list[str] = [r.json for r in json_results]
+    json_records_expected: typing.List[str] = [r.json for r in json_results]
 
     with cassarrow.install_cassarrow(session) as cassarrow_session:
         arrow_results = cassarrow_session.execute(query)
