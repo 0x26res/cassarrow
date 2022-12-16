@@ -8,11 +8,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10"]
-
+        os: [ "ubuntu-latest", "windows-latest" ]
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
@@ -32,8 +32,9 @@ jobs:
           poetry install
 
       - name: Run Tests
-        run: |
-          poetry run python -c "import cassarrow;print(cassarrow.__version__)"
-          poetry run pre-commit run --all
-        
+        run: poetry run python -c "import cassarrow;print(cassarrow.__version__)"
+
+      - name: Lint code
+        if: "matrix.python-version == '3.10'"
+        run: poetry run pre-commit run --all
 
