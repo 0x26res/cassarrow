@@ -28,7 +28,7 @@ def load_all_data(table: str) -> typing.Iterator[bytes]:
                 yield fp.read()
 
 
-def load_json(table: str) -> list[str]:
+def load_json(table: str) -> typing.List[str]:
     directory = (
         pathlib.Path(pkg_resources.resource_filename(__name__, "select")) / table
     )
