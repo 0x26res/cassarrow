@@ -1,6 +1,6 @@
 import contextlib
 import io
-import typing
+from typing import List, Tuple, Iterator
 
 import _cassarrow
 import cassandra.cluster
@@ -46,31 +46,19 @@ def get_arrow_type(dtype: CassandraTypeType) -> pa.DataType:
             keys_sorted=True,
         )
     elif cassname == "UserType":
-        return pa.struct(
-            [
-                pa.field(name, get_arrow_type(subtype))
-                for name, subtype in zip(dtype.fieldnames, dtype.subtypes)
-            ]
-        )
+        return pa.struct([pa.field(name, get_arrow_type(subtype)) for name, subtype in zip(dtype.fieldnames, dtype.subtypes)])
     try:
         return NATIVE_TYPES[typename]
     except KeyError:
         raise TypeError(f"{typename}: {dtype}")
 
 
-def column_metadata_to_schema(column_metadata: list[tuple]) -> pa.Schema:
-    return pa.schema(
-        [
-            pa.field(column_name, get_arrow_type(dtype))
-            for keyspace, table, column_name, dtype in column_metadata
-        ]
-    )
+def column_metadata_to_schema(column_metadata: List[tuple]) -> pa.Schema:
+    return pa.schema([pa.field(column_name, get_arrow_type(dtype)) for keyspace, table, column_name, dtype in column_metadata])
 
 
-def metadata_to_schema(names: list[str], dtypes: list[CassandraTypeType]):
-    return pa.schema(
-        [pa.field(name, get_arrow_type(dtype)) for name, dtype in zip(names, dtypes)]
-    )
+def metadata_to_schema(names: List[str], dtypes: List[CassandraTypeType]):
+    return pa.schema([pa.field(name, get_arrow_type(dtype)) for name, dtype in zip(names, dtypes)])
 
 
 class ArrowResultMessage(ResultMessage):
@@ -98,21 +86,17 @@ def result_set_to_table(result_set: cassandra.cluster.ResultSet) -> pa.Table:
 
 
 class ArrowProtocolHandler(_ProtocolHandler):
-    message_types_by_opcode = _ProtocolHandler.message_types_by_opcode | {
-        ArrowResultMessage.opcode: ArrowResultMessage
-    }
+    message_types_by_opcode = {**_ProtocolHandler.message_types_by_opcode, **{ArrowResultMessage.opcode: ArrowResultMessage}}
 
 
-def record_batch_factory(
-    colnames: list[str], rows: pa.RecordBatch
-) -> tuple[pa.RecordBatch]:
+def record_batch_factory(colnames: List[str], rows: pa.RecordBatch) -> Tuple[pa.RecordBatch]:
     return (rows,)
 
 
 @contextlib.contextmanager
 def install_cassarrow(
     session: cassandra.cluster.Session,
-) -> typing.Iterator[cassandra.cluster.Session]:
+) -> Iterator[cassandra.cluster.Session]:
     row_factory, client_protocol_handler = (
         session.row_factory,
         session.client_protocol_handler,
