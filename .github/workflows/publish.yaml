@@ -1,0 +1,36 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [ published ]
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+
+      - name: Setup poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: 1.2.2
+
+      - name: Configure poetry
+        env:
+          pypi_token: ${{ secrets.PyPI_TOKEN }}
+        run: |
+          poetry self add "poetry-dynamic-versioning[plugin]"
+          poetry config pypi-token.pypi $pypi_token
+
+      - name: Build and publish
+        run: poetry publish --build

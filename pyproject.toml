@@ -44,7 +44,7 @@ pandas = ">=1.5.2"
 enable = true
 
 [tool.poetry-dynamic-versioning.substitution]
-files = ["*/__init__.py"]
+files = ["*/__init__.py", "build.py"]
 folders = [ {path = "cassarrow"}]
 
 
