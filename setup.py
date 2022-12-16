@@ -1,5 +1,6 @@
 import os
 import pathlib
+import sys
 
 import pyarrow
 from pybind11.setup_helpers import Pybind11Extension, build_ext
@@ -27,7 +28,9 @@ def get_extension():
         cxx_std=17,
         library_dirs=pyarrow.get_library_dirs(),
         libraries=pyarrow.get_libraries(),
-        runtime_library_dirs=pyarrow.get_library_dirs(),
+        runtime_library_dirs=[]
+        if sys.platform == "win32"
+        else pyarrow.get_library_dirs(),
         include_dirs=[source_directory, pyarrow.get_include()],
     )
     if USE_CXX11_ABI is not None:

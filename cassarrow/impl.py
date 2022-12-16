@@ -1,12 +1,13 @@
 import contextlib
 import io
-from typing import List, Tuple, Iterator
+from typing import Iterator, List, Tuple
 
-import _cassarrow
 import cassandra.cluster
 import pyarrow as pa  # Must be imported before _cassarrow
 from cassandra.cqltypes import CassandraTypeType
 from cassandra.protocol import ResultMessage, _ProtocolHandler
+
+import _cassarrow
 
 NATIVE_TYPES = {
     "ascii": pa.string(),
@@ -46,7 +47,12 @@ def get_arrow_type(dtype: CassandraTypeType) -> pa.DataType:
             keys_sorted=True,
         )
     elif cassname == "UserType":
-        return pa.struct([pa.field(name, get_arrow_type(subtype)) for name, subtype in zip(dtype.fieldnames, dtype.subtypes)])
+        return pa.struct(
+            [
+                pa.field(name, get_arrow_type(subtype))
+                for name, subtype in zip(dtype.fieldnames, dtype.subtypes)
+            ]
+        )
     try:
         return NATIVE_TYPES[typename]
     except KeyError:
@@ -54,11 +60,18 @@ def get_arrow_type(dtype: CassandraTypeType) -> pa.DataType:
 
 
 def column_metadata_to_schema(column_metadata: List[tuple]) -> pa.Schema:
-    return pa.schema([pa.field(column_name, get_arrow_type(dtype)) for keyspace, table, column_name, dtype in column_metadata])
+    return pa.schema(
+        [
+            pa.field(column_name, get_arrow_type(dtype))
+            for keyspace, table, column_name, dtype in column_metadata
+        ]
+    )
 
 
 def metadata_to_schema(names: List[str], dtypes: List[CassandraTypeType]):
-    return pa.schema([pa.field(name, get_arrow_type(dtype)) for name, dtype in zip(names, dtypes)])
+    return pa.schema(
+        [pa.field(name, get_arrow_type(dtype)) for name, dtype in zip(names, dtypes)]
+    )
 
 
 class ArrowResultMessage(ResultMessage):
@@ -86,10 +99,15 @@ def result_set_to_table(result_set: cassandra.cluster.ResultSet) -> pa.Table:
 
 
 class ArrowProtocolHandler(_ProtocolHandler):
-    message_types_by_opcode = {**_ProtocolHandler.message_types_by_opcode, **{ArrowResultMessage.opcode: ArrowResultMessage}}
+    message_types_by_opcode = {
+        **_ProtocolHandler.message_types_by_opcode,
+        **{ArrowResultMessage.opcode: ArrowResultMessage},
+    }
 
 
-def record_batch_factory(colnames: List[str], rows: pa.RecordBatch) -> Tuple[pa.RecordBatch]:
+def record_batch_factory(
+    colnames: List[str], rows: pa.RecordBatch
+) -> Tuple[pa.RecordBatch]:
     return (rows,)
 
 
