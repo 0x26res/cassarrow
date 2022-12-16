@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10"]
+        poetry-version: ["1.2.2"]
 
     steps:
       - name: Checkout sources
@@ -22,15 +23,18 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Setup poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: ${{ matrix.poetry-version }}
+
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install poetry
           poetry install
 
       - name: Run tests
         run: |
-          pytest tests/test_from_binary.py
-          pre-commit run --all
+          poetry run pytest tests/test_from_binary.py
+          poetry run pre-commit run --all
         
 
