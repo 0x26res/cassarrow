@@ -93,7 +93,7 @@ arrow::Status decode_vint(std::istringstream& buffer, uint64_t& output) {
 
     // We mask out high-order bits to prevent sign-extension as the value is placed in a 64-bit
     // arg to the num_leading_zeros function.
-    int extra_bytes = num_leading_zeros(~first_byte & 0xff) - 56;
+    int extra_bytes = (int)(num_leading_zeros(~first_byte & 0xff)) - 56;
 
     // Build up the vint value one byte at a time from the data bytes.
     // The firstByte contains size as well as the most significant bits of
