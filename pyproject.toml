@@ -21,6 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
 ]
 keywords = ["apache-arrow", "data"]
 
@@ -28,7 +29,7 @@ keywords = ["apache-arrow", "data"]
 [tool.poetry.dependencies]
 cassandra-driver = ">=3.0.0"
 pyarrow = ">=8.0.0"
-python = ">=3.8,<3.11"
+python = ">=3.8,<3.12"
 pybind11 = ">=2.10.1"
 wheel = ">=0.37.0"
 
@@ -76,4 +77,4 @@ target-version = ['py39']
 
 
 [mypy]
-python_version = 3.9
+python_version = 3.10

@@ -1,5 +1,5 @@
 set(Python3_FIND_UNVERSIONED_NAMES NEVER)
-find_package(Python3 3.9 EXACT REQUIRED COMPONENTS Interpreter Development)
+find_package(Python3 3.10 EXACT REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11 REQUIRED)
 
 add_library(
