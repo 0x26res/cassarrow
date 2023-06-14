@@ -37,42 +37,21 @@ python ./scripts/populate_db.py
 python ./scripts/dump_test_data.py 
 ```
 
-## Arrow Installation from source
-
-See https://arrow.apache.org/docs/developers/python.html#using-pip
+## Poetry Set Up
 
 ```shell
-sudo apt-get install libjemalloc-dev \
-    libboost-dev \
-    libboost-filesystem-dev \
-    libboost-system-dev \
-    libboost-regex-dev \
-    python-dev \
-    autoconf \
-    flex \
-    bison \
-    libarrow-python-dev
-    
-python3.9 -m venv venv-from-source
-source venv-from-source/bin/activate
-pip install pip --upgrade
-pip install wheel
-pip install --no-binary pyarrow -r requirements-dev.txt
+poetry install
+poetry run python -c "import cassarrow;print(cassarrow.__version__)"
+poetry run pytest
 ```
 
-## Quick test
-
-### Using setuptools
+## CMake set up 
 
 ```shell
-rm -rf *.so build/ && USE_CXX11_ABI=0 python setup.py build_ext --inplace &&  PYTHONPATH=./ pytest tests/
-```
-
-### Using CMake 
-
-```shell
-cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target _cassarrow -- -j 3 && PYTHONPATH=./:cmake-build-debug/cpp/ pytest tests
-cmake --build /home/arthur/source/cassarrow/cmake-build-debug --target test_exe && ./cmake-build-debug/cpp/tests/test_exe
+mkdir -p ./cmake-build-debug/
+(cd ./cmake-build-debug/ && cmake -Dpybind11_DIR=$(python -c "import pybind11;print(pybind11.get_cmake_dir())") -Dpyarrow_INCLUDE_DIR=$(python -c "import pyarrow;print(pyarrow.get_include())") -Dpyarrow_LIBRARIES=$(python -c "import pyarrow;print(' '.join(pyarrow.get_libraries()))") -Dpyarrow_LIBRARY_DIRS=$(python -c "import pyarrow;print(' '.join(pyarrow.get_library_dirs()))")  ../)
+cmake --build ./cmake-build-debug --target _cassarrow -- -j 3 && PYTHONPATH=./:./cmake-build-debug/cpp/ pytest tests
+cmake --build ./cmake-build-debug --target test_exe && ./cmake-build-debug/cpp/tests/test_exe
 ```
 
 ### Test library published in test pypi

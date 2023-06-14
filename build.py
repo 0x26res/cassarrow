@@ -18,7 +18,7 @@ def build(setup_kwargs):
     try:
         pyarrow.create_library_symlinks()
     except FileExistsError:
-        pass  # For some reason this started complaininig
+        pass  # For some reason this started complaining
     source_directory = ROOT / "cpp" / "src"
     extension = Pybind11Extension(
         name="_cassarrow",
