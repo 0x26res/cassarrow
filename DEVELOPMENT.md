@@ -54,7 +54,7 @@ cmake --build ./cmake-build-debug --target _cassarrow -- -j 3 && PYTHONPATH=./:.
 cmake --build ./cmake-build-debug --target test_exe && ./cmake-build-debug/cpp/tests/test_exe
 ```
 
-### Test library published in test pypi
+## Test library published in test pypi
 
 ```shell
 python3.9 -m venv venv-test
