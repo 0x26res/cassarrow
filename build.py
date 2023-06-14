@@ -14,7 +14,6 @@ USE_CXX11_ABI = os.environ.get("USE_CXX11_ABI", "0")
 
 
 def build(setup_kwargs):
-
     try:
         pyarrow.create_library_symlinks()
     except FileExistsError:

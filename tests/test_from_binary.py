@@ -2,11 +2,11 @@ import os
 import pathlib
 import typing
 
+import _cassarrow
 import pkg_resources
 import pyarrow as pa
 import pytest
 
-import _cassarrow
 import cassarrow
 import cassarrow.impl
 from tests.test_compare_with_json import compare_json

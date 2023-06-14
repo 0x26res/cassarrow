@@ -49,7 +49,6 @@ def create_dump_select_protocol_handler(destination: pathlib.Path):
 def dump_select_query(destination: pathlib.Path, query: str):
     cluster = cassandra.cluster.Cluster()
     with cluster.connect("cassarrow") as connection:
-
         assert query.startswith("SELECT *")
         json_query = query.replace("SELECT *", "SELECT JSON *")
 
