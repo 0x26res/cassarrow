@@ -2,11 +2,12 @@ import contextlib
 import io
 from typing import Iterator, List, Tuple
 
-import _cassarrow
 import cassandra.cluster
 import pyarrow as pa  # Must be imported before _cassarrow
 from cassandra.cqltypes import CassandraTypeType
 from cassandra.protocol import ResultMessage, _ProtocolHandler
+
+import _cassarrow
 
 NATIVE_TYPES = {
     "ascii": pa.string(),

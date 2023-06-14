@@ -68,9 +68,10 @@ requires = [
 build-backend = "poetry_dynamic_versioning.backend"
 
 [tool.isort]
-profile = "black"
-known_first_party = ["_cassarow", "cassarrow"]
-skip = [".gitignore"]
+    profile = "black"
+    known_first_party = ["_cassarrow", "cassarrow", "tests"]
+    skip = [".gitignore"]
+    src_paths = ["isort", "test"]
 
 [tool.black]
 target-version = ['py39']
