@@ -21,6 +21,8 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 keywords = ["apache-arrow", "data"]
 
@@ -28,12 +30,13 @@ keywords = ["apache-arrow", "data"]
 [tool.poetry.dependencies]
 cassandra-driver = ">=3.0.0"
 pyarrow = ">=8.0.0"
-python = ">=3.8,<3.11"
+python = ">=3.9,<4"
 pybind11 = ">=2.10.1"
 wheel = ">=0.37.0"
+setuptools = "*"
 
 [tool.poetry.dev-dependencies]
-black = "^22.10.0"
+black = "*"
 coverage = ">=6.5.0"
 flake8 = ">=5.0.4"
 isort = ">=5.10.1"
@@ -42,6 +45,7 @@ pylint = ">=2.15.0"
 pytest = ">=7.2.0"
 pytest-benchmark = ">=4.0.0"
 pandas = ">=1.5.2"
+numpy = ">=2.0.0"
 
 [tool.poetry-dynamic-versioning]
 enable = true
@@ -67,13 +71,14 @@ requires = [
 build-backend = "poetry_dynamic_versioning.backend"
 
 [tool.isort]
-profile = "black"
-known_first_party = ["_cassarow", "cassarrow"]
-skip = [".gitignore"]
+    profile = "black"
+    known_first_party = ["_cassarrow", "cassarrow", "tests"]
+    skip = [".gitignore"]
+    src_paths = ["isort", "test"]
 
 [tool.black]
 target-version = ['py39']
 
 
 [mypy]
-python_version = 3.9
+python_version = 3.10
