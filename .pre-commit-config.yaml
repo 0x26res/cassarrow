@@ -2,31 +2,31 @@ default_language_version:
   python: python3.10
 repos:
   - repo: https://github.com/ambv/black
-    rev: 23.1.0
+    rev: 24.10.0
     hooks:
       - id: black
   - repo: https://github.com/pycqa/isort
-    rev: 5.11.5
+    rev: 5.13.2
     hooks:
       - id: isort
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 'v1.3.0'
+    rev: 'v1.14.1'
     hooks:
       - id: mypy
         additional_dependencies:
           - types-setuptools
   - repo: https://github.com/PyCQA/flake8
-    rev: 6.0.0
+    rev: 7.1.1
     hooks:
       - id: flake8
 # NOTEBOOKS:
   - repo: https://github.com/psf/black
-    rev: 23.1.0
+    rev: 24.10.0
     hooks:
       - id: black-jupyter
         name: black (jupyter)
   - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.7.0
+    rev: 1.9.1
     hooks:
       - id: nbqa-isort
         name: isort (jupyter)
@@ -38,3 +38,13 @@ repos:
 #          - --remove-kernel-metadata
 #          - --pin-patterns
 #          - "[pin];[donotremove]"
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.43.0
+    hooks:
+      - id: markdownlint
+        exclude: ^(api/docs/source/includes/api/|.gitlab/issue_templates/)
+        args:
+          - "--disable=MD013"
+          - "--disable=MD034"
+          - "--disable=MD040"
+          - "--fix"

@@ -4,8 +4,8 @@ WIP...
 
 ## Scope
 
-
 The scope should be limited to wheels available for pyarrow (see https://pypi.org/project/pyarrow/#files):
+
 - [ ] cp39-cp39-win_amd64.whl
 - [x] cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
 - [ ] cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
@@ -15,9 +15,7 @@ The scope should be limited to wheels available for pyarrow (see https://pypi.or
 - [ ] cp39-cp39-macosx_10_13_universal2.whl
 - [ ] cp39-cp39-macosx_10_9_x86_64.whl
 
-
 The CI scipt has been borrowed from [zero mq](https://github.com/zeromq/pyzmq/blob/f30a5cb00cfd67ab65b474c86852a31e77c349af/.github/workflows/wheels.yml)
-
 
 ## Commands
 
@@ -37,11 +35,14 @@ CIBW_BUILD="cp39*" CIBW_ARCHS_LINUX="x86_64"  cibuildwheel  --platform=linux --p
 
 ### Run the wheel build manually
 
-* Start the image
+- Start the image
+
 ```shell
 docker run -it --volume $(pwd):/project --platform=linux/386  quay.io/pypa/manylinux2014_i686:2021-12-12-e5100b5 /bin/bash
 ```
-* In the image
+
+- In the image
+
 ```shell
 docker run -it --volume $(pwd):/project   quay.io/pypa/manylinux2014_x86_64:2021-12-12-e5100b5 -- /bin/bash
 PIP_DISABLE_PIP_VERSION_CHECK="1"
@@ -61,7 +62,9 @@ mkdir -p /tmp/cibuildwheel/repaired_wheel
 
 sh -c 'auditwheel repair -w /tmp/cibuildwheel/repaired_wheel /tmp/cibuildwheel/built_wheel/cassarrow-0.0.1rc0-cp39-cp39-linux_x86_64.whl'
 ```
-* You may need to install arrow
+
+- You may need to install arrow
+
 ```shell
 yum install -y epel-release || yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-$(cut -d: -f5 /etc/system-release-cpe | cut -d. -f1).noarch.rpm
 yum install -y https://apache.jfrog.io/artifactory/arrow/centos/$(cut -d: -f5 /etc/system-release-cpe | cut -d. -f1)/apache-arrow-release-latest.rpm
@@ -72,7 +75,9 @@ yum install -y --enablerepo=epel parquet-devel # For Apache Parquet C++
 yum install -y --enablerepo=epel parquet-glib-devel # For Apache Parquet GLib (C)
 yum install -y --enablerepo=epel arrow-python-devel # For Apache Parquet GLib (C)
 ```
-* Or better, just pyarrow
+
+- Or better, just pyarrow
+
 ```shell
 pip install pyarrow
 ```
@@ -84,12 +89,15 @@ ValueError: Cannot repair wheel, because required library "libarrow.so.700" coul
 
 ```
 
-* Install the whole of arrow (slow/inefficient)
+- Install the whole of arrow (slow/inefficient)
+
 ```shell
 export CIBW_BEFORE_ALL="yum install -y epel-release || yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm && yum install -y https://apache.jfrog.io/artifactory/arrow/centos/7/apache-arrow-release-latest.rpm && yum install -y --enablerepo=epel arrow-python-devel"
 CIBW_BUILD="cp39*" CIBW_ARCHS_LINUX="x86_64"  cibuildwheel  --platform=linux
 ```
-* Install pyarrow and add it to the library path
+
+- Install pyarrow and add it to the library path
+
 ```shell
 export CIBW_REPAIR_WHEEL_COMMAND='pip install pyarrow && python -c "import pyarrow; pyarrow.create_library_symlinks()" && export LD_LIBRARY_PATH=/opt/_internal/cpython-3.9.9/lib/python3.9/site-packages/pyarrow/:$LD_LIBRARY_PATH && auditwheel repair -w {dest_dir} {wheel}'
 ```

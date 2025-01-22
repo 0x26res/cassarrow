@@ -29,9 +29,9 @@ def build(setup_kwargs):
         cxx_std=17,
         library_dirs=pyarrow.get_library_dirs(),
         libraries=pyarrow.get_libraries(),
-        runtime_library_dirs=[]
-        if sys.platform == "win32"
-        else pyarrow.get_library_dirs(),
+        runtime_library_dirs=(
+            [] if sys.platform == "win32" else pyarrow.get_library_dirs()
+        ),
         include_dirs=[source_directory, pyarrow.get_include()],
         extra_compile_args=[f"-D_GLIBCXX_USE_CXX11_ABI={USE_CXX11_ABI}"],
     )

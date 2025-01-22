@@ -21,7 +21,8 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 keywords = ["apache-arrow", "data"]
 
@@ -29,9 +30,10 @@ keywords = ["apache-arrow", "data"]
 [tool.poetry.dependencies]
 cassandra-driver = ">=3.0.0"
 pyarrow = ">=8.0.0"
-python = ">=3.8,<3.12"
+python = ">=3.9,<4"
 pybind11 = ">=2.10.1"
 wheel = ">=0.37.0"
+setuptools = "*"
 
 [tool.poetry.dev-dependencies]
 black = "^22.10.0"
@@ -43,6 +45,7 @@ pylint = ">=2.15.0"
 pytest = ">=7.2.0"
 pytest-benchmark = ">=4.0.0"
 pandas = ">=1.5.2"
+numpy = ">=2.0.0"
 
 [tool.poetry-dynamic-versioning]
 enable = true

@@ -1,19 +1,21 @@
+# Cassarrow
+
+Arrow based Cassandra python driver.
+
+**!!! This project is no longer maintained !!!**
+
 [![PyPI Version][pypi-image]][pypi-url]
 [![Python Version][versions-image]][versions-url]
 [![Github Stars][stars-image]][stars-url]
 [![Build Status][build-image]][build-url]
 [![License][license-image]][license-url]
 
-
-# Cassarrow
-
-Arrow based Cassandra python driver. 
-
-## TLDR;
+## TLDR
 
 Speed up the cassandra python driver using C++ to parse cassandra queries data as [Apache Arrow](https://arrow.apache.org/) tables.
 
 Key features:
+
 * 20x speed up in the parsing of results
 * 14x less memory
 * Support for most native types, UDT, List and Set
@@ -74,8 +76,6 @@ with cassarrow.install_cassarrow(session) as cassarrow_session:
 | map         | `pa.map_`   |        |
 | set         | `pa.list_`  |        |
 | udt         | `pa.struct` |        |
-
-
 
 [pypi-image]: https://img.shields.io/pypi/v/cassarrow
 [pypi-url]: https://pypi.org/project/cassarrow/
